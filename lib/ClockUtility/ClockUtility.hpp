@@ -36,7 +36,7 @@ public:
 
     void setEpoch(time_t newTimestamp);
 
-    [[nodiscard]] CustomDateTime now();
+    [[nodiscard]] static CustomDateTime now();
 
 private:
 

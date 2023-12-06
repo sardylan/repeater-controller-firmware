@@ -24,9 +24,9 @@
 ClockUtility *ClockUtility::instance = nullptr;
 
 ClockUtility *ClockUtility::getInstance() {
-    if (ClockUtility::instance == nullptr)
-        ClockUtility::instance = new ClockUtility();
-    return ClockUtility::instance;
+    if (instance == nullptr)
+        instance = new ClockUtility();
+    return instance;
 }
 
 ClockUtility::ClockUtility() = default;
@@ -37,7 +37,7 @@ void ClockUtility::begin() {
     rtc.setClockMode(false);
 }
 
-void ClockUtility::setEpoch(time_t newTimestamp) {
+void ClockUtility::setEpoch(const time_t newTimestamp) {
     rtc.setEpoch(newTimestamp);
 }
 
