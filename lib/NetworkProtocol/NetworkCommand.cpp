@@ -48,19 +48,19 @@ Command NetworkCommand::getCommand() const {
     return command;
 }
 
-uint8_t NetworkCommand::getSingleArg(size_t pos) const {
+uint8_t NetworkCommand::getSingleArg(const size_t pos) const {
     return args[pos];
 }
 
-void NetworkCommand::setSingleArg(size_t pos, uint8_t val) {
+void NetworkCommand::setSingleArg(const size_t pos, const uint8_t val) {
     args[pos] = val;
 }
 
-void NetworkCommand::getArg(size_t pos, void *val, size_t size) const {
+void NetworkCommand::getArg(const size_t pos, void *val, const size_t size) const {
     memcpy(val, args + pos, size);
 }
 
-void NetworkCommand::setArg(size_t pos, uint8_t *val, size_t size) {
+void NetworkCommand::setArg(const size_t pos, const void *val, const size_t size) {
     memcpy(args + pos, val, size);
 }
 

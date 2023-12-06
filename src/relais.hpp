@@ -22,9 +22,6 @@
 #ifndef STATION_MGMT__OUTPUT__H
 #define STATION_MGMT__OUTPUT__H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "const.hpp"
 
 #define RELAIS_NUMBER 8
@@ -35,9 +32,9 @@ public:
 
     static Relais *getInstance();
 
-    [[nodiscard]] bool getStatus(size_t item) const;
+    [[nodiscard]] bool getStatus(int item) const;
 
-    void setStatus(size_t item, const bool &newStatus);
+    void setStatus(int item, const bool &newStatus);
 
 private:
 

@@ -19,36 +19,16 @@
  *
  */
 
-#ifndef STATION_MGMT__CONFIG__H
-#define STATION_MGMT__CONFIG__H
+#include "utils.hpp"
 
 #include <stdint.h>
+#include <string.h>
 
-#define CONFIG_MAIN_VOLTAGE_OFF_PARAM 'o'
-#define CONFIG_MAIN_VOLTAGE_ON_PARAM 'O'
-
-class Config
+void swapEndianness(void *var, const size_t size)
 {
-public:
-    Config();
-
-    ~Config();
-
-    [[nodiscard]] float getMainVoltageOff() const;
-
-    void setMainVoltageOff(float newValue);
-
-    [[nodiscard]] float getMainVoltageOn() const;
-
-    void setMainVoltageOn(float newValue);
-
-private:
-    float mainVoltageOff;
-    float mainVoltageOn;
-
-    static float readFromEEPROM(int address);
-
-    static void writeToEEPROM(int address, const float& value);
-};
-
-#endif
+    uint8_t src[size];
+    memcpy(src, var, size);
+    auto *dst = static_cast<uint8_t *>(var);
+    for (size_t i = 0; i < size; i++)
+        dst[size - i - 1] = src[i];
+}

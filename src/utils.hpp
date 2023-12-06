@@ -1,5 +1,5 @@
 /*
- * Station MGMT
+* Station MGMT
  *
  * Copyright (C) 2023:
  *  - Luca Cireddu IS0GVH (is0gvh@gmail.com)
@@ -19,36 +19,11 @@
  *
  */
 
-#ifndef STATION_MGMT__CONFIG__H
-#define STATION_MGMT__CONFIG__H
+#ifndef STATION_MGMT__UTILS__H
+#define STATION_MGMT__UTILS__H
 
-#include <stdint.h>
+#include <stddef.h>
 
-#define CONFIG_MAIN_VOLTAGE_OFF_PARAM 'o'
-#define CONFIG_MAIN_VOLTAGE_ON_PARAM 'O'
-
-class Config
-{
-public:
-    Config();
-
-    ~Config();
-
-    [[nodiscard]] float getMainVoltageOff() const;
-
-    void setMainVoltageOff(float newValue);
-
-    [[nodiscard]] float getMainVoltageOn() const;
-
-    void setMainVoltageOn(float newValue);
-
-private:
-    float mainVoltageOff;
-    float mainVoltageOn;
-
-    static float readFromEEPROM(int address);
-
-    static void writeToEEPROM(int address, const float& value);
-};
+void swapEndianness(void* var, size_t size);
 
 #endif

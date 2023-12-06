@@ -32,7 +32,8 @@
     if (clockNow - lastExecution##jobName > timeSpan) { \
         lastExecution##jobName = clockNow; \
         do##jobName(); \
-    }
+    }; \
+
 
 #ifndef DEBUG
 #define serialDebug(x) Serial.print(x)
@@ -42,6 +43,8 @@
 #define serialDebugln(x)
 #endif
 
+#define swapEndian(x) swapEndianness(&x, sizeof(x));
+
 void (*resetFunc)() = nullptr;
 
 void doReceiveCommand();
@@ -50,6 +53,6 @@ void doReadEpeverData();
 
 void doReadEpeverStatus();
 
-void doEvaluate();
+void doEvaluateRelais();
 
 #endif

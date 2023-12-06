@@ -24,23 +24,24 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include <ClockUtility.hpp>
 #include <EpeverClient.hpp>
 #include <NetworkProtocol.hpp>
-#include <ClockUtility.hpp>
 
-#include "const.hpp"
 #include "config.hpp"
+#include "const.hpp"
+#include "utils.hpp"
 
 Config config;
 
-EpeverClient* epeverClient;
-NetworkProtocol* networkProtocol;
-ClockUtility* clockUtility;
+EpeverClient *epeverClient;
+NetworkProtocol *networkProtocol;
+ClockUtility *clockUtility;
 
 declareLastExecution(ReceiveCommand);
 declareLastExecution(ReadEpeverData);
 declareLastExecution(ReadEpeverStatus);
-declareLastExecution(Evaluate);
+declareLastExecution(EvaluateRelais);
 
 void setup()
 {
@@ -66,7 +67,7 @@ void setup()
     serialDebugln("done");
 
     serialDebug("Configuring NetworkProtocol... ");
-    constexpr uint8_t mac[]NETWORK_MAC_ADDRESS;
+    constexpr uint8_t mac[] NETWORK_MAC_ADDRESS;
     networkProtocol = NetworkProtocol::getInstance(mac, NETWORK_IP, NETWORK_DNS, NETWORK_GATEWAY, NETWORK_SUBNET);
     networkProtocol->setUdpPort(NETWORK_UDP_PORT);
     networkProtocol->begin();
@@ -82,10 +83,10 @@ void loop()
 {
     getCurrentMillis();
 
-    executeEvery(ReceiveCommand, 100)
+    executeEvery(ReceiveCommand, 250)
     executeEvery(ReadEpeverData, 1000)
     executeEvery(ReadEpeverStatus, 1000)
-    executeEvery(Evaluate, 5000)
+    executeEvery(EvaluateRelais, 1000)
 }
 
 void doReceiveCommand()
@@ -98,17 +99,16 @@ void doReceiveCommand()
 
     NetworkCommand response(request.getCommand(), request.getIp(), request.getPort());
 
-    const CustomDateTime dateTime = ClockUtility::now();
-    const uint32_t unixtime = dateTime.unixtime();
-    response.setSingleArg(0, static_cast<uint8_t>((unixtime >> 24) & 0xff));
-    response.setSingleArg(1, static_cast<uint8_t>((unixtime >> 16) & 0xff));
-    response.setSingleArg(2, static_cast<uint8_t>((unixtime >> 8) & 0xff));
-    response.setSingleArg(3, static_cast<uint8_t>((unixtime >> 0) & 0xff));
-
     switch (request.getCommand())
     {
     case Command::Ping:
-        {}
+        {
+            const CustomDateTime dateTime = ClockUtility::now();
+            uint32_t unixtime = dateTime.unixtime();
+
+            swapEndian(unixtime);
+            response.setArg(0, &unixtime, sizeof(uint32_t));
+        }
         break;
 
     case Command::Reset:
@@ -119,33 +119,52 @@ void doReceiveCommand()
 
     case Command::Telemetry:
         {
-            const EpeverData& data = epeverClient->getData();
+            const EpeverData &data = epeverClient->getData();
 
             float panelVoltage = data.getPanelVoltage();
             float panelCurrent = data.getPanelCurrent();
             float batteryVoltage = data.getBatteryVoltage();
             float batteryChargeCurrent = data.getBatteryChargeCurrent();
 
-            response.setArg(4, reinterpret_cast<uint8_t*>(&panelVoltage), sizeof(panelVoltage));
-            response.setArg(8, reinterpret_cast<uint8_t*>(&panelCurrent), sizeof(panelCurrent));
-            response.setArg(12, reinterpret_cast<uint8_t*>(&batteryVoltage), sizeof(batteryVoltage));
-            response.setArg(16, reinterpret_cast<uint8_t*>(&batteryChargeCurrent), sizeof(batteryChargeCurrent));
+            swapEndian(panelVoltage);
+            swapEndian(panelVoltage);
+            swapEndian(panelVoltage);
+            swapEndian(panelVoltage);
+
+            const CustomDateTime dateTime = ClockUtility::now();
+            uint32_t unixtime = dateTime.unixtime();
+
+            swapEndian(unixtime);
+            response.setArg(0, &unixtime, sizeof(uint32_t));
+            response.setArg(4, reinterpret_cast<uint8_t *>(&panelVoltage), sizeof(float));
+            response.setArg(8, reinterpret_cast<uint8_t *>(&panelCurrent), sizeof(float));
+            response.setArg(12, reinterpret_cast<uint8_t *>(&batteryVoltage), sizeof(float));
+            response.setArg(16, reinterpret_cast<uint8_t *>(&batteryChargeCurrent), sizeof(float));
         }
         break;
 
     case Command::RTCRead:
-        {}
+        {
+            const CustomDateTime dateTime = ClockUtility::now();
+            uint32_t unixtime = dateTime.unixtime();
+
+            swapEndian(unixtime);
+            response.setArg(0, &unixtime, sizeof(uint32_t));
+        }
         break;
 
     case Command::RTCSet:
         {
-            const auto first = static_cast<time_t>(request.getSingleArg(0));
-            const auto second = static_cast<time_t>(request.getSingleArg(1));
-            const auto thidr = static_cast<time_t>(request.getSingleArg(2));
-            const auto fourth = static_cast<time_t>(request.getSingleArg(3));
-
-            const time_t newUnixtime = first << 24 | second << 16 | thidr << 8 | fourth << 0;
+            time_t newUnixtime;
+            request.getArg(0, &newUnixtime, sizeof(time_t));
+            swapEndian(newUnixtime);
             clockUtility->setEpoch(newUnixtime);
+
+            const CustomDateTime dateTime = ClockUtility::now();
+            uint32_t unixtime = dateTime.unixtime();
+
+            swapEndian(unixtime);
+            response.setArg(0, &unixtime, sizeof(uint32_t));
         }
         break;
 
@@ -157,11 +176,19 @@ void doReceiveCommand()
             switch (configParam)
             {
             case CONFIG_MAIN_VOLTAGE_OFF_PARAM:
-                response.setArg(1, reinterpret_cast<uint8_t*>(config.getMainVoltageOff()), sizeof(uint16_t));
+                {
+                    float mainVoltageOff = config.getMainVoltageOff();
+                    swapEndian(mainVoltageOff);
+                    response.setArg(1, reinterpret_cast<uint8_t *>(&mainVoltageOff), sizeof(float));
+                }
                 break;
 
             case CONFIG_MAIN_VOLTAGE_ON_PARAM:
-                response.setArg(1, reinterpret_cast<uint8_t*>(config.getMainVoltageOn()), sizeof(uint16_t));
+                {
+                    float mainVoltageOn = config.getMainVoltageOn();
+                    swapEndian(mainVoltageOn);
+                    response.setArg(1, reinterpret_cast<uint8_t *>(&mainVoltageOn), sizeof(float));
+                }
                 break;
 
             default:
@@ -173,25 +200,31 @@ void doReceiveCommand()
     case Command::ConfigSet:
         {
             const uint8_t configParam = request.getSingleArg(0);
-            response.setSingleArg(4, configParam);
+            response.setSingleArg(0, configParam);
 
             switch (configParam)
             {
             case CONFIG_MAIN_VOLTAGE_OFF_PARAM:
                 {
-                    uint16_t value;
-                    request.getArg(0, &value, sizeof(uint16_t));
+                    float value;
+                    request.getArg(1, &value, sizeof(float));
                     config.setMainVoltageOff(value);
-                    response.setArg(5, reinterpret_cast<uint8_t*>(config.getMainVoltageOff()), sizeof(uint16_t));
+
+                    float mainVoltageOff = config.getMainVoltageOff();
+                    swapEndian(mainVoltageOff);
+                    response.setArg(1, reinterpret_cast<uint8_t *>(&mainVoltageOff), sizeof(float));
                 }
                 break;
 
             case CONFIG_MAIN_VOLTAGE_ON_PARAM:
                 {
-                    uint16_t value;
-                    request.getArg(0, &value, sizeof(uint16_t));
+                    float value;
+                    request.getArg(1, &value, sizeof(float));
                     config.setMainVoltageOn(value);
-                    response.setArg(5, reinterpret_cast<uint8_t*>(config.getMainVoltageOn()), sizeof(uint16_t));
+
+                    float mainVoltageOn = config.getMainVoltageOn();
+                    swapEndian(mainVoltageOn);
+                    response.setArg(1, reinterpret_cast<uint8_t *>(&mainVoltageOn), sizeof(float));
                 }
                 break;
 
@@ -204,14 +237,16 @@ void doReceiveCommand()
     case Command::OutputRead:
         {
             const uint8_t outputNumber = request.getSingleArg(0);
-            response.setSingleArg(4, outputNumber);
+            response.setSingleArg(0, outputNumber);
+            response.setSingleArg(1, outputNumber);
         }
         break;
 
     case Command::OutputSet:
         {
             const uint8_t outputNumber = request.getSingleArg(0);
-            response.setSingleArg(4, outputNumber);
+            response.setSingleArg(0, outputNumber);
+            response.setSingleArg(1, outputNumber);
         }
         break;
 
@@ -222,63 +257,17 @@ void doReceiveCommand()
     networkProtocol->send(response);
 }
 
-void doReadEpeverData()
+void doReadEpeverData() { epeverClient->readData(); }
+
+void doReadEpeverStatus() { epeverClient->readStatus(); }
+
+void doEvaluateRelais()
 {
-    epeverClient->readData();
-}
-
-void doReadEpeverStatus()
-{
-    epeverClient->readStatus();
-}
-
-void doEvaluate()
-{
-    const EpeverData& data = epeverClient->getData();
-
-    serialDebug("Data: ");
-
-    if (data.isValid())
+    const EpeverData &data = epeverClient->getData();
+    if (!data.isValid())
     {
-        serialDebugln("Valid");
-
-        serialDebug("- Panel voltage: ");
-        serialDebugln(data.getPanelVoltage());
-        serialDebug(" - Panel current: ");
-        serialDebugln(data.getPanelCurrent());
-        serialDebug(" - Battery voltage: ");
-        serialDebugln(data.getBatteryVoltage());
-        serialDebug(" - Battery charge current: ");
-        serialDebugln(data.getBatteryChargeCurrent());
-    }
-    else
-    {
-        serialDebugln("INVALID !!!");
+        return;
     }
 
-    const EpeverStatus& status = epeverClient->getStatus();
-
-    serialDebug("Status: ");
-
-    if (status.isValid())
-    {
-        serialDebugln("Valid");
-
-        serialDebug(" - Wrong Voltage Identification: ");
-        serialDebugln(status.isWrongVoltageIdentification());
-        serialDebug(" - Panel current: ");
-        serialDebugln(temperatureToString(status.getTemperature()));
-        serialDebug(" - Battery voltage: ");
-        serialDebugln(batteryToString(status.getBattery()));
-        serialDebug(" - Charging method: ");
-        serialDebugln(chargingToString(status.getCharging()));
-        serialDebug(" - Panel Status: ");
-        serialDebugln(arraysToString(status.getArrays()));
-        serialDebug(" - Load Status: ");
-        serialDebugln(loadToString(status.getLoad()));
-    }
-    else
-    {
-        serialDebugln("INVALID !!!");
-    }
+    // const float batteryVoltage = data.getBatteryVoltage();
 }

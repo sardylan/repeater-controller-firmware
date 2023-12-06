@@ -69,7 +69,7 @@ public:
 
     void getArg(size_t pos, void *val, size_t size) const;
 
-    void setArg(size_t pos, uint8_t *val, size_t size);
+    void setArg(size_t pos, const void *val, size_t size);
 
     void serialize(uint8_t *buffer) const;
 

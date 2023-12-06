@@ -36,7 +36,7 @@ Relais *Relais::getInstance() {
 
 Relais::Relais() {
     for (size_t B = 0; B <= ((RELAIS_NUMBER - 1) / 8); B++) {
-        uint8_t data = EEPROM.read(EEPROM_ADDRESS_RELAIS_START + B);
+        const uint8_t data = EEPROM.read(EEPROM_ADDRESS_RELAIS_START + B);
 
         for (size_t bt = 0; ((B * 8) + bt) < RELAIS_NUMBER; bt++) {
             status[(B * 8) + bt] = static_cast<bool>(data & (1 << bt));
@@ -46,14 +46,14 @@ Relais::Relais() {
 
 Relais::~Relais() = default;
 
-bool Relais::getStatus(size_t item) const {
+bool Relais::getStatus(const int item) const {
     return status[item];
 }
 
-void Relais::setStatus(size_t item, const bool &newStatus) {
+void Relais::setStatus(const int item, const bool &newStatus) {
     status[item] = newStatus;
 
-    size_t B = item / 8;
+    const size_t B = item / 8;
     uint8_t data = EEPROM.read(EEPROM_ADDRESS_RELAIS_START + B);
 
     if (status[item])

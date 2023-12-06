@@ -25,33 +25,52 @@
 
 #include "eeprom.hpp"
 
-Config::Config() {
-    Config::mainVoltageOff =
-            EEPROM.read(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF_LSB) + (EEPROM.read(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF_MSB) << 8);
-    Config::mainVoltageOn =
-            EEPROM.read(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON_LSB) + (EEPROM.read(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON_MSB) << 8);
+Config::Config()
+{
+    mainVoltageOff = readFromEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF);
+    mainVoltageOn = readFromEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON);
 }
 
 Config::~Config() = default;
 
-uint16_t Config::getMainVoltageOff() const {
+float Config::getMainVoltageOff() const
+{
     return mainVoltageOff;
 }
 
-void Config::setMainVoltageOff(uint16_t newValue) {
-    Config::mainVoltageOff = newValue;
-
-    EEPROM.write(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF_LSB, Config::mainVoltageOff & 0xFF);
-    EEPROM.write(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF_MSB, (Config::mainVoltageOff >> 8) & 0xFF);
+void Config::setMainVoltageOff(const float newValue)
+{
+    mainVoltageOff = newValue;
+    writeToEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF, mainVoltageOff);
 }
 
-uint16_t Config::getMainVoltageOn() const {
+float Config::getMainVoltageOn() const
+{
     return mainVoltageOn;
 }
 
-void Config::setMainVoltageOn(uint16_t newValue) {
-    Config::mainVoltageOn = newValue;
+void Config::setMainVoltageOn(float newValue)
+{
+    mainVoltageOn = newValue;
+    writeToEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON, mainVoltageOn);
+}
 
-    EEPROM.write(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON_LSB, Config::mainVoltageOn & 0xFF);
-    EEPROM.write(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON_MSB, (Config::mainVoltageOn >> 8) & 0xFF);
+float Config::readFromEEPROM(const int address)
+{
+    float value;
+    auto* valuePointer = reinterpret_cast<uint8_t*>(&value);
+    valuePointer[0] = EEPROM.read(address + 0);
+    valuePointer[1] = EEPROM.read(address + 1);
+    valuePointer[2] = EEPROM.read(address + 2);
+    valuePointer[3] = EEPROM.read(address + 3);
+    return value;
+}
+
+void Config::writeToEEPROM(const int address, const float& value)
+{
+    const auto* valuePointer = reinterpret_cast<const uint8_t*>(&value);
+    EEPROM.write(address + 0, valuePointer[0]);
+    EEPROM.write(address + 1, valuePointer[1]);
+    EEPROM.write(address + 2, valuePointer[2]);
+    EEPROM.write(address + 3, valuePointer[3]);
 }
