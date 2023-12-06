@@ -1,0 +1,3 @@
+{
+  "headers": ["NetworkProtocol.hpp", "NetworkCommand.hpp"]
+}
