@@ -30,20 +30,19 @@
 #define PIN_ETHERNET_SD_ENABLE 4
 #define PIN_ETHERNET_NET_ENABLE 10
 
-#define NETWORK_MAC_ADDRESS { 0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed }
+#define NETWORK_MAC_ADDRESS                                                                                            \
+    {                                                                                                                  \
+        0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed                                                                             \
+    }
 #define NETWORK_IP "172.29.10.66"
 #define NETWORK_DNS "172.29.10.254"
 #define NETWORK_GATEWAY "172.29.10.254"
 #define NETWORK_SUBNET "172.29.10.0"
 #define NETWORK_UDP_PORT 8888
 
-#define RELAIS_CHANNEL_1_PIN 31
-#define RELAIS_CHANNEL_2_PIN 33
-#define RELAIS_CHANNEL_3_PIN 35
-#define RELAIS_CHANNEL_4_PIN 37
-#define RELAIS_CHANNEL_5_PIN 39
-#define RELAIS_CHANNEL_6_PIN 41
-#define RELAIS_CHANNEL_7_PIN 43
-#define RELAIS_CHANNEL_8_PIN 45
+#define RELAIS_CHANNEL_PINS                                                                                            \
+    {                                                                                                                  \
+        23, 25, 27, 29, 31, 33, 35, 37                                                                                 \
+    }
 
 #endif

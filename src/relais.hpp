@@ -34,7 +34,7 @@ public:
 
     [[nodiscard]] bool getStatus(int item) const;
 
-    void setStatus(int item, const bool &newStatus);
+    void setStatus(int item, bool newStatus);
 
 private:
 

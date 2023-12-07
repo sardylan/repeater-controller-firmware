@@ -30,6 +30,7 @@
 
 #include "config.hpp"
 #include "const.hpp"
+#include "relais.hpp"
 #include "utils.hpp"
 
 Config config;
@@ -37,17 +38,33 @@ Config config;
 EpeverClient *epeverClient;
 NetworkProtocol *networkProtocol;
 ClockUtility *clockUtility;
+Relais *relais;
 
 declareLastExecution(ReceiveCommand);
 declareLastExecution(ReadEpeverData);
 declareLastExecution(ReadEpeverStatus);
+declareLastExecution(EvaluateGlobalStatus);
 declareLastExecution(EvaluateRelais);
+
+bool globalStatus;
+
+int relaisPins[RELAIS_NUMBER] RELAIS_CHANNEL_PINS;
 
 void setup()
 {
     Serial.begin(9600);
 
-    serialDebugln("Build 4");
+    serialDebugln("Build 24");
+
+    serialDebug("Configuring Relais pins... ");
+    for (const int pin : relaisPins)
+    {
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, HIGH);
+    }
+    rainbow();
+    serialDebugln("done");
+
 
     serialDebug("Configuring Ethernet shield pins... ");
     pinMode(PIN_ETHERNET_SD_ENABLE, OUTPUT);
@@ -77,16 +94,22 @@ void setup()
     clockUtility = ClockUtility::getInstance();
     clockUtility->begin();
     serialDebugln("done");
+
+    serialDebug("Configuring Relais... ");
+    relais = Relais::getInstance();
+    globalStatus = false;
+    serialDebugln("done");
 }
 
 void loop()
 {
     getCurrentMillis();
 
-    executeEvery(ReceiveCommand, 250)
-    executeEvery(ReadEpeverData, 1000)
-    executeEvery(ReadEpeverStatus, 1000)
-    executeEvery(EvaluateRelais, 1000)
+    executeEvery(ReceiveCommand, 250);
+    executeEvery(ReadEpeverData, 1000);
+    executeEvery(ReadEpeverStatus, 1000);
+    executeEvery(EvaluateGlobalStatus, 1000);
+    executeEvery(EvaluateRelais, 1000);
 }
 
 void doReceiveCommand()
@@ -237,16 +260,26 @@ void doReceiveCommand()
     case Command::OutputRead:
         {
             const uint8_t outputNumber = request.getSingleArg(0);
+
             response.setSingleArg(0, outputNumber);
-            response.setSingleArg(1, outputNumber);
+            response.setSingleArg(1, relais->getStatus(outputNumber) ? 1 : 0);
         }
         break;
 
     case Command::OutputSet:
         {
             const uint8_t outputNumber = request.getSingleArg(0);
+            const bool newStatus = request.getSingleArg(1) > 0;
+
+            serialDebug("Output: ");
+            serialDebug(outputNumber);
+            serialDebug(" - New value: ");
+            serialDebugln(newStatus ? "TRUE" : "FALSE");
+
+            relais->setStatus(outputNumber, newStatus);
+
             response.setSingleArg(0, outputNumber);
-            response.setSingleArg(1, outputNumber);
+            response.setSingleArg(1, relais->getStatus(outputNumber) ? 1 : 0);
         }
         break;
 
@@ -261,13 +294,50 @@ void doReadEpeverData() { epeverClient->readData(); }
 
 void doReadEpeverStatus() { epeverClient->readStatus(); }
 
-void doEvaluateRelais()
+void doEvaluateGlobalStatus()
 {
     const EpeverData &data = epeverClient->getData();
     if (!data.isValid())
-    {
         return;
+
+    const float &currentVoltage = data.getBatteryVoltage();
+    const float &onVoltage = config.getMainVoltageOn();
+    const float &offVoltage = config.getMainVoltageOff();
+
+    globalStatus = currentVoltage >= onVoltage || (globalStatus && !(currentVoltage <= offVoltage));
+
+    serialDebug("currentVoltage: ");
+    serialDebugln(currentVoltage);
+    serialDebug("onVoltage: ");
+    serialDebugln(onVoltage);
+    serialDebug("offVoltage: ");
+    serialDebugln(offVoltage);
+    serialDebug("globalStatus: ");
+    serialDebugln(globalStatus);
+}
+
+void doEvaluateRelais()
+{
+    serialDebug("Relais: ");
+    for (int i = 0; i < RELAIS_NUMBER; i++)
+    {
+        serialDebug(relais->getStatus(i) ? "1" : "0");
+        digitalWrite(relaisPins[i], globalStatus && relais->getStatus(i) ? LOW : HIGH);
+    }
+    serialDebugln();
+}
+
+void rainbow()
+{
+    for (const int pin : relaisPins)
+    {
+        digitalWrite(pin, LOW);
+        delayRainbow();
     }
 
-    // const float batteryVoltage = data.getBatteryVoltage();
+    for (const int pin : relaisPins)
+    {
+        digitalWrite(pin, HIGH);
+        delayRainbow();
+    }
 }

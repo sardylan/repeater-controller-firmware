@@ -29,17 +29,17 @@
 Relais *Relais::instance = nullptr;
 
 Relais *Relais::getInstance() {
-    if (Relais::instance == nullptr)
-        Relais::instance = new Relais();
-    return Relais::instance;
+    if (instance == nullptr)
+        instance = new Relais();
+    return instance;
 }
 
 Relais::Relais() {
-    for (size_t B = 0; B <= ((RELAIS_NUMBER - 1) / 8); B++) {
+    for (size_t B = 0; B <= (RELAIS_NUMBER - 1) / 8; B++) {
         const uint8_t data = EEPROM.read(EEPROM_ADDRESS_RELAIS_START + B);
 
-        for (size_t bt = 0; ((B * 8) + bt) < RELAIS_NUMBER; bt++) {
-            status[(B * 8) + bt] = static_cast<bool>(data & (1 << bt));
+        for (size_t bt = 0; B * 8 + bt < RELAIS_NUMBER; bt++) {
+            status[B * 8 + bt] = static_cast<bool>(data & 1 << bt);
         }
     }
 }
@@ -50,16 +50,16 @@ bool Relais::getStatus(const int item) const {
     return status[item];
 }
 
-void Relais::setStatus(const int item, const bool &newStatus) {
+void Relais::setStatus(const int item, const bool newStatus) {
     status[item] = newStatus;
 
     const size_t B = item / 8;
     uint8_t data = EEPROM.read(EEPROM_ADDRESS_RELAIS_START + B);
 
     if (status[item])
-        data |= 0b00000001 << (item % 8);
+        data |= 0b00000001 << item % 8;
     else
-        data &= ~0b00000001 << (item % 8);
+        data &= ~0b00000001 << item % 8;
 
     EEPROM.write(EEPROM_ADDRESS_RELAIS_START + B, data);
 }

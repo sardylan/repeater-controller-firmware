@@ -32,7 +32,7 @@
     if (clockNow - lastExecution##jobName > timeSpan) { \
         lastExecution##jobName = clockNow; \
         do##jobName(); \
-    }; \
+    };
 
 
 #ifndef DEBUG
@@ -45,6 +45,8 @@
 
 #define swapEndian(x) swapEndianness(&x, sizeof(x));
 
+#define delayRainbow() delay(75)
+
 void (*resetFunc)() = nullptr;
 
 void doReceiveCommand();
@@ -53,6 +55,10 @@ void doReadEpeverData();
 
 void doReadEpeverStatus();
 
+void doEvaluateGlobalStatus();
+
 void doEvaluateRelais();
+
+void rainbow();
 
 #endif
