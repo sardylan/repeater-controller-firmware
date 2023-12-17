@@ -23,24 +23,18 @@
 
 #include <Ethernet.h>
 
-NetworkProtocol* NetworkProtocol::instance = nullptr;
+NetworkProtocol *NetworkProtocol::instance = nullptr;
 
-NetworkProtocol* NetworkProtocol::getInstance(const uint8_t* mac,
-                                              const String& ip,
-                                              const String& dns,
-                                              const String& gateway,
-                                              const String& subnet)
+NetworkProtocol *NetworkProtocol::getInstance(const uint8_t *mac, const String &ip, const String &dns,
+                                              const String &gateway, const String &subnet)
 {
     if (NetworkProtocol::instance == nullptr)
         NetworkProtocol::instance = new NetworkProtocol(mac, ip, dns, gateway, subnet);
     return NetworkProtocol::instance;
 }
 
-NetworkProtocol::NetworkProtocol(const uint8_t* mac,
-                                 const String& ip,
-                                 const String& dns,
-                                 const String& gateway,
-                                 const String& subnet)
+NetworkProtocol::NetworkProtocol(const uint8_t *mac, const String &ip, const String &dns, const String &gateway,
+                                 const String &subnet)
 {
     memcpy(NetworkProtocol::mac, mac, 6);
     NetworkProtocol::ip.fromString(ip);
@@ -53,19 +47,13 @@ NetworkProtocol::NetworkProtocol(const uint8_t* mac,
 
 NetworkProtocol::~NetworkProtocol() = default;
 
-uint16_t NetworkProtocol::getUdpPort() const
-{
-    return udpPort;
-}
+uint16_t NetworkProtocol::getUdpPort() const { return udpPort; }
 
-void NetworkProtocol::setUdpPort(uint16_t newValue)
-{
-    NetworkProtocol::udpPort = newValue;
-}
+void NetworkProtocol::setUdpPort(uint16_t newValue) { NetworkProtocol::udpPort = newValue; }
 
 void NetworkProtocol::begin()
 {
-    EthernetClass::begin(const_cast<uint8_t*>(mac), ip, dns, gateway, subnet);
+    EthernetClass::begin(const_cast<uint8_t *>(mac), ip, dns, gateway, subnet);
 
     udp.begin(udpPort);
 }
@@ -74,16 +62,16 @@ NetworkCommand NetworkProtocol::receiveCommand()
 {
     const int packetSize = udp.parsePacket();
 
-    if (packetSize == 0 || packetSize > NETWORK_COMMAND_SIZE)
+    if (packetSize == 0)
         return {};
 
     const IPAddress remoteIp = udp.remoteIP();
     const uint16_t remotePort = udp.remotePort();
 
-    uint8_t packetBuffer[NETWORK_COMMAND_SIZE];
-    memset(packetBuffer, '\x00', NETWORK_COMMAND_SIZE);
+    uint8_t packetBuffer[1024];
+    memset(packetBuffer, '\x00', 1024);
 
-    const int len = udp.read(reinterpret_cast<unsigned char*>(packetBuffer), NETWORK_COMMAND_SIZE);
+    const int len = udp.read(reinterpret_cast<unsigned char *>(packetBuffer), 1024);
     if (len == 0)
         return {};
 
@@ -95,15 +83,15 @@ NetworkCommand NetworkProtocol::receiveCommand()
     return networkCommand;
 }
 
-void NetworkProtocol::send(const NetworkCommand& networkCommand)
+void NetworkProtocol::send(const NetworkCommand &networkCommand)
 {
     if (!networkCommand.isValid())
         return;
 
-    uint8_t buffer[NETWORK_COMMAND_SIZE];
+    uint8_t buffer[networkCommand.getArgsSize() + 1];
     networkCommand.serialize(buffer);
 
     udp.beginPacket(networkCommand.getIp(), networkCommand.getPort());
-    udp.write(buffer, NETWORK_COMMAND_SIZE);
+    udp.write(buffer, networkCommand.getArgsSize() + 1);
     udp.endPacket();
 }

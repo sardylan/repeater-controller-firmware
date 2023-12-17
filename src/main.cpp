@@ -150,9 +150,9 @@ void doReceiveCommand()
             float batteryChargeCurrent = data.getBatteryChargeCurrent();
 
             swapEndian(panelVoltage);
-            swapEndian(panelVoltage);
-            swapEndian(panelVoltage);
-            swapEndian(panelVoltage);
+            swapEndian(panelCurrent);
+            swapEndian(batteryVoltage);
+            swapEndian(batteryChargeCurrent);
 
             const CustomDateTime dateTime = ClockUtility::now();
             uint32_t unixtime = dateTime.unixtime();

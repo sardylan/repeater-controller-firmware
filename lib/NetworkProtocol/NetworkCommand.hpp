@@ -28,9 +28,8 @@
 #include <IPAddress.h>
 #include <Printable.h>
 
-#define NETWORK_COMMAND_SIZE 32
-
-enum class Command : uint8_t {
+enum class Command : uint8_t
+{
     Null = '\0',
     Ping = 'p',
     Reset = 'X',
@@ -43,11 +42,11 @@ enum class Command : uint8_t {
     OutputSet = 'O'
 };
 
-class NetworkCommand : public Printable {
+class NetworkCommand final : public Printable
+{
 
 public:
-
-    explicit NetworkCommand(Command command, IPAddress ip, uint16_t port);
+    explicit NetworkCommand(Command command, const IPAddress &ip, uint16_t port);
 
     NetworkCommand();
 
@@ -55,13 +54,13 @@ public:
 
     ~NetworkCommand();
 
-    bool isValid() const;
+    [[nodiscard]] bool isValid() const;
 
-    const IPAddress &getIp() const;
+    [[nodiscard]] const IPAddress &getIp() const;
 
-    uint16_t getPort() const;
+    [[nodiscard]] uint16_t getPort() const;
 
-    Command getCommand() const;
+    [[nodiscard]] Command getCommand() const;
 
     [[nodiscard]] uint8_t getSingleArg(size_t pos) const;
 
@@ -70,6 +69,8 @@ public:
     void getArg(size_t pos, void *val, size_t size) const;
 
     void setArg(size_t pos, const void *val, size_t size);
+
+    size_t getArgsSize() const;
 
     void serialize(uint8_t *buffer) const;
 
@@ -82,7 +83,6 @@ public:
     static const char *commandToString(Command c);
 
 private:
-
     const bool valid;
 
     IPAddress ip;
@@ -90,8 +90,8 @@ private:
 
     const Command command;
 
-    uint8_t args[NETWORK_COMMAND_SIZE - 1]{};
-
+    uint8_t args[127]{};
+    size_t argsSize;
 };
 
 #endif
