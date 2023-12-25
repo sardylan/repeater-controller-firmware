@@ -70,4 +70,7 @@ const uint8_t& NetworkCommand::readArg(const size_t& pos) const {
 
 void NetworkCommand::writeArg(const size_t& pos, const uint8_t& value) {
     args[pos] = value;
+
+    if (argsSize < pos)
+        argsSize = pos;
 }

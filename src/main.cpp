@@ -33,6 +33,7 @@
 #include "const.hpp"
 #include "relais.hpp"
 #include "utils.hpp"
+#include "version.hpp"
 
 Config config;
 
@@ -56,7 +57,10 @@ void setup() {
 
     Serial.println("################################");
     Serial.println(__TIMESTAMP__);
+    Serial.print("Firmware version: ");
+    Serial.println(FIRMWARE_VERSION);
     Serial.println();
+    Serial.flush();
 
     serialDebug("Configuring Relais pins... ");
     for (const int pin : relaisPins) {
@@ -143,24 +147,27 @@ void doReceiveCommand() {
                 const EpeverData& data = epeverClient->getData();
 
                 float panelVoltage = data.getPanelVoltage();
-                float panelCurrent = data.getPanelCurrent();
-                float batteryVoltage = data.getBatteryVoltage();
-                float batteryChargeCurrent = data.getBatteryChargeCurrent();
-
                 swapEndian(panelVoltage);
+
+                float panelCurrent = data.getPanelCurrent();
                 swapEndian(panelCurrent);
+
+                float batteryVoltage = data.getBatteryVoltage();
                 swapEndian(batteryVoltage);
+
+                float batteryChargeCurrent = data.getBatteryChargeCurrent();
                 swapEndian(batteryChargeCurrent);
 
                 const CustomDateTime dateTime = ClockUtility::now();
                 uint32_t unixtime = dateTime.unixtime();
-
                 swapEndian(unixtime);
+
                 response.writeArgs(0, reinterpret_cast<uint8_t*>(&unixtime), sizeof(uint32_t));
                 response.writeArgs(4, reinterpret_cast<uint8_t*>(&panelVoltage), sizeof(float));
                 response.writeArgs(8, reinterpret_cast<uint8_t*>(&panelCurrent), sizeof(float));
                 response.writeArgs(12, reinterpret_cast<uint8_t*>(&batteryVoltage), sizeof(float));
                 response.writeArgs(16, reinterpret_cast<uint8_t*>(&batteryChargeCurrent), sizeof(float));
+                response.writeArg(20, globalStatus ? 0x01 : 0x00);
             }
             break;
 

@@ -22,27 +22,23 @@
 #ifndef STATION_MGMT__CONST__H
 #define STATION_MGMT__CONST__H
 
-#define PIN_EPEVER_RO 0 // RX
+#define PIN_EPEVER_RO 0    // RX
 #define PIN_EPEVER_RE 3
 #define PIN_EPEVER_DE 2
-#define PIN_EPEVER_DI 0 // TX
+#define PIN_EPEVER_DI 0    // TX
 
 #define PIN_ETHERNET_SD_ENABLE 4
 #define PIN_ETHERNET_NET_ENABLE 10
 
-#define NETWORK_MAC_ADDRESS                                                                                            \
-    {                                                                                                                  \
-        0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed                                                                             \
-    }
+#define NETWORK_MAC_ADDRESS \
+    { 0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed }
 #define NETWORK_IP "172.29.10.66"
 #define NETWORK_DNS "172.29.10.254"
 #define NETWORK_GATEWAY "172.29.10.254"
 #define NETWORK_SUBNET "172.29.10.0"
 #define NETWORK_UDP_PORT 8888
 
-#define RELAIS_CHANNEL_PINS                                                                                            \
-    {                                                                                                                  \
-        23, 25, 27, 29, 31, 33, 35, 37                                                                                 \
-    }
+#define RELAIS_CHANNEL_PINS \
+    { 23, 25, 27, 29, 31, 33, 35, 37 }
 
 #endif
