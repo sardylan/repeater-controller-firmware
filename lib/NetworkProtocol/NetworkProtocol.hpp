@@ -19,57 +19,51 @@
  *
  */
 
-#ifndef STATION_MGMT__NETWORK_PROTOCOL__H
-#define STATION_MGMT__NETWORK_PROTOCOL__H
+#ifndef STATION_MGMT__NETWORK_PROTOCOL__PROTOCOL__H
+#define STATION_MGMT__NETWORK_PROTOCOL__PROTOCOL__H
 
-#include <WString.h>
 #include <Ethernet.h>
+#include <WString.h>
 
-#include "NetworkCommand.hpp"
+#include "request.hpp"
+#include "response.hpp"
 
 #define DEFAULT_UDP_PORT 8888
 
 class NetworkProtocol {
+    public:
 
-public:
+        static NetworkProtocol* getInstance(
+            const uint8_t* mac, const String& ip, const String& dns, const String& gateway, const String& subnet);
 
-    static NetworkProtocol *getInstance(const uint8_t *mac,
-                                        const String &ip,
-                                        const String &dns,
-                                        const String &gateway,
-                                        const String &subnet);
+        [[nodiscard]]
+        uint16_t getUdpPort() const;
 
-    [[nodiscard]] uint16_t getUdpPort() const;
+        void setUdpPort(uint16_t newValue);
 
-    void setUdpPort(uint16_t newValue);
+        void begin();
 
-    void begin();
+        RequestNetworkCommand receive();
 
-    NetworkCommand receiveCommand();
+        void send(const ResponseNetworkCommand& command);
 
-    void send(const NetworkCommand& networkCommand);
+    private:
 
-private:
+        NetworkProtocol(
+            const uint8_t* mac, const String& ip, const String& dns, const String& gateway, const String& subnet);
 
-    NetworkProtocol(const uint8_t *mac,
-                    const String &ip,
-                    const String &dns,
-                    const String &gateway,
-                    const String &subnet);
+        ~NetworkProtocol();
 
-    ~NetworkProtocol();
+        static NetworkProtocol* instance;
 
-    static NetworkProtocol *instance;
+        uint8_t mac[6] {};
+        IPAddress ip;
+        IPAddress dns;
+        IPAddress gateway;
+        IPAddress subnet;
 
-    uint8_t mac[6]{};
-    IPAddress ip;
-    IPAddress dns;
-    IPAddress gateway;
-    IPAddress subnet;
-
-    uint16_t udpPort;
-    EthernetUDP udp;
-
+        uint16_t udpPort;
+        EthernetUDP udp;
 };
 
 #endif

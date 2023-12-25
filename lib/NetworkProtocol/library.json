@@ -1,3 +1,10 @@
 {
-  "headers": ["NetworkProtocol.hpp", "NetworkCommand.hpp"]
+  "headers": [
+    "NetworkProtocol.hpp",
+    "enums.hpp",
+    "command.hpp",
+    "request.hpp",
+    "response.hpp",
+    "utilities.hpp"
+  ]
 }

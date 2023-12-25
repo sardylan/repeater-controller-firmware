@@ -31,16 +31,18 @@
         lastExecution##jobName = 0; \
     if (clockNow - lastExecution##jobName > timeSpan) { \
         lastExecution##jobName = clockNow; \
-        do##jobName(); \
+        do \
+            ##jobName(); \
     };
 
-
 #ifndef DEBUG
-#define serialDebug(x) Serial.print(x)
-#define serialDebugln(x) Serial.println(x)
+    #define serialDebug(x) Serial.print(x)
+    #define serialDebugln(x) \
+        Serial.println(x); \
+        Serial.flush()
 #else
-#define serialDebug(x)
-#define serialDebugln(x)
+    #define serialDebug(x)
+    #define serialDebugln(x)
 #endif
 
 #define swapEndian(x) swapEndianness(&x, sizeof(x));
