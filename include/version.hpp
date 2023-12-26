@@ -22,6 +22,6 @@
 #ifndef STATION_MGMT__VERSION__H
 #define STATION_MGMT__VERSION__H
 
-#define FIRMWARE_VERSION "0.9.1"
+#define FIRMWARE_VERSION "0.9.2"
 
 #endif
