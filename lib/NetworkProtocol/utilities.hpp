@@ -22,6 +22,7 @@
 #ifndef STATION_MGMT__NETWORK_PROTOCOL__UTILITIES__H
 #define STATION_MGMT__NETWORK_PROTOCOL__UTILITIES__H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "enums.hpp"
@@ -43,5 +44,7 @@ ConfigParam configParamParse(uint8_t b);
 uint8_t configParamSerialize(ConfigParam p);
 
 const char* configParamToString(const ConfigParam& p);
+
+void payloadToHex(char* dest, const char* payload, const size_t& size);
 
 #endif

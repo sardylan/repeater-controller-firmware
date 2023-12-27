@@ -32,6 +32,7 @@
 
 #define NETWORK_MAC_ADDRESS \
     { 0xde, 0xad, 0xbe, 0xef, 0xfe, 0xed }
+
 #define NETWORK_IP "172.29.10.66"
 #define NETWORK_DNS "172.29.10.254"
 #define NETWORK_GATEWAY "172.29.10.254"

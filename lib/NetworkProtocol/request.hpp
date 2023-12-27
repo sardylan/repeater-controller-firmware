@@ -22,34 +22,40 @@
 #ifndef STATION_MGMT__NETWORK_PROTOCOL__REQUEST__H
 #define STATION_MGMT__NETWORK_PROTOCOL__REQUEST__H
 
-#include <IPAddress.h>
-#include <Printable.h>
-#include <stddef.h>
-#include <stdint.h>
-
-#include "command.hpp"
-#include "enums.hpp"
-
-class RequestNetworkCommand final : public NetworkCommand {
-    public:
-
-        RequestNetworkCommand();
-
-        explicit RequestNetworkCommand(const IPAddress& ip, const uint16_t &port);
-
-        RequestNetworkCommand(const RequestNetworkCommand& other);
-
-        ~RequestNetworkCommand() override;
-
-        CommandType getCommandType() const;
-
-        void setCommandType(const CommandType& command);
-
-        size_t printTo(Print& p) const override;
-
-    private:
-
-        CommandType commandType {};
-};
+// #include <IPAddress.h>
+// #include <Printable.h>
+// #include <stddef.h>
+// #include <stdint.h>
+//
+// #include "command.hpp"
+// #include "enums.hpp"
+//
+// class RequestNetworkCommand final : public NetworkCommand {
+//     public:
+//
+//         RequestNetworkCommand();
+//
+//         explicit RequestNetworkCommand(IPAddress ip, uint16_t port);
+//
+//         RequestNetworkCommand(const RequestNetworkCommand& other);
+//
+//         ~RequestNetworkCommand() override;
+//
+//         [[nodiscard]]
+//         bool isValid() const;
+//
+//         [[nodiscard]]
+//         CommandType getCommandType() const;
+//
+//         void setCommandType(CommandType commandType);
+//
+//         size_t printTo(Print& p) const override;
+//
+//     private:
+//
+//         bool valid;
+//
+//         CommandType commandType {};
+// };
 
 #endif

@@ -24,11 +24,10 @@
 #include <stdint.h>
 #include <string.h>
 
-void swapEndianness(void *var, const size_t size)
-{
+void swapEndianness(void* var, const size_t size) {
     uint8_t src[size];
     memcpy(src, var, size);
-    auto *dst = static_cast<uint8_t *>(var);
+    auto* dst = static_cast<uint8_t*>(var);
     for (size_t i = 0; i < size; i++)
         dst[size - i - 1] = src[i];
 }

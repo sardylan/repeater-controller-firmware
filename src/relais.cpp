@@ -26,27 +26,26 @@
 
 #include "eeprom.hpp"
 
-Relais *Relais::instance = nullptr;
+Relais* Relais::instance = nullptr;
 
-Relais *Relais::getInstance()
-{
+Relais* Relais::getInstance() {
     if (instance == nullptr)
         instance = new Relais();
     return instance;
 }
 
-Relais::Relais()
-{
+Relais::Relais() {
     for (int i = 0; i < RELAIS_NUMBER; i++)
         status[i] = EEPROM.read(EEPROM_ADDRESS_RELAIS_START + i) > 0;
 }
 
 Relais::~Relais() = default;
 
-bool Relais::getStatus(const int item) const { return status[item]; }
+bool Relais::getStatus(const int item) const {
+    return status[item];
+}
 
-void Relais::setStatus(const int item, const bool newStatus)
-{
+void Relais::setStatus(const int item, const bool newStatus) {
     status[item] = newStatus;
-    EEPROM.write(EEPROM_ADDRESS_RELAIS_START + item, newStatus ? 1 : 0);
+    EEPROM.write(EEPROM_ADDRESS_RELAIS_START + item, newStatus ? 0x01 : 0x00);
 }

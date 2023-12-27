@@ -25,6 +25,7 @@
 #include <stdint.h>
 
 enum class CommandType : uint8_t {
+    Null = '\0',
     Ping = 'p',
     Reset = 'X',
     Telemetry = 't',

@@ -19,34 +19,36 @@
  *
  */
 
-#include "response.hpp"
-
-#include "utilities.hpp"
-
-ResponseNetworkCommand::ResponseNetworkCommand() = default;
-
-ResponseNetworkCommand::ResponseNetworkCommand(const IPAddress& ip, const uint16_t& port) : NetworkCommand(ip, port) {
-}
-
-ResponseNetworkCommand::ResponseNetworkCommand(const ResponseNetworkCommand& other) = default;
-
-ResponseNetworkCommand::~ResponseNetworkCommand() = default;
-
-ResponseType ResponseNetworkCommand::getResponseType() const {
-    return responseType;
-}
-
-void ResponseNetworkCommand::setResponseType(const ResponseType& responseType) {
-    this->responseType = responseType;
-}
-
-size_t ResponseNetworkCommand::printTo(Print& p) const {
-    size_t ln = p.print(responseTypeToString(responseType));
-    ln += p.print(" response of ");
-    ln += p.print(getArgsSize());
-    ln += p.print(" bytes to ");
-    ln += p.print(getIp());
-    ln += p.print(":");
-    ln += p.print(getPort());
-    return ln;
-}
+// #include "response.hpp"
+//
+// #include "utilities.hpp"
+//
+// ResponseNetworkCommand::ResponseNetworkCommand() = default;
+//
+// ResponseNetworkCommand::ResponseNetworkCommand(const IPAddress& ip, const uint16_t& port) : NetworkCommand(ip, port) {
+// }
+//
+// ResponseNetworkCommand::ResponseNetworkCommand(const ResponseNetworkCommand& other) = default;
+//
+// ResponseNetworkCommand::~ResponseNetworkCommand() = default;
+//
+// ResponseType ResponseNetworkCommand::getResponseType() const {
+//     return responseType;
+// }
+//
+// void ResponseNetworkCommand::setResponseType(const ResponseType& responseType) {
+//     this->responseType = responseType;
+// }
+//
+// size_t ResponseNetworkCommand::printTo(Print& p) const {
+//     p.flush();
+//     size_t ln = p.print(responseTypeToString(responseType));
+//     ln += p.print(" response of ");
+//     ln += p.print(getArgsSize());
+//     ln += p.print(" bytes to ");
+//     ln += p.print(getIp());
+//     ln += p.print(":");
+//     ln += p.print(getPort());
+//     p.flush();
+//     return ln;
+// }

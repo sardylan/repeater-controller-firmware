@@ -1,3 +1,7 @@
 {
-  "headers": ["EpeverClient.hpp", "EpeverData.hpp"]
+  "headers": [
+    "EpeverClient.hpp",
+    "EpeverData.hpp",
+    "EpeverStatus.hpp"
+  ]
 }

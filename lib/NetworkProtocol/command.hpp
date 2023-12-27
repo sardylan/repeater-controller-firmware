@@ -22,57 +22,52 @@
 #ifndef STATION_MGMT__NETWORK_PROTOCOL__COMMAND__H
 #define STATION_MGMT__NETWORK_PROTOCOL__COMMAND__H
 
-#include <IPAddress.h>
-#include <Print.h>
-#include <Printable.h>
-#include <stdint.h>
-
-#include "enums.hpp"
-
-class NetworkCommand : public Printable {
-    public:
-
-        NetworkCommand();
-
-        explicit NetworkCommand(const IPAddress& ip, uint16_t port);
-
-        NetworkCommand(const NetworkCommand& other);
-
-        virtual ~NetworkCommand();
-
-        [[nodiscard]]
-        bool isValid() const;
-
-        [[nodiscard]]
-        const IPAddress& getIp() const;
-
-        [[nodiscard]]
-        uint16_t getPort() const;
-
-        [[nodiscard]]
-        size_t getArgsSize() const;
-
-        void readArgs(uint8_t* dest, const size_t& pos, const size_t& size) const;
-
-        void writeArgs(const size_t& pos, const uint8_t* src, const size_t& size);
-
-        const uint8_t & readArg(const size_t& pos) const;
-
-        void writeArg(const size_t& pos, const uint8_t &value);
-
-        size_t printTo(Print& p) const override = 0;
-
-    protected:
-
-        uint8_t args[32] {};
-        size_t argsSize {};
-
-    private:
-
-        const bool valid;
-
-        const IPAddress ip;
-        const uint16_t port;
-};
+// #include <IPAddress.h>
+// #include <Print.h>
+// #include <Printable.h>
+// #include <stdint.h>
+//
+// #include "enums.hpp"
+//
+// class NetworkCommand : public Printable {
+//     public:
+//
+//         NetworkCommand();
+//
+//         explicit NetworkCommand(IPAddress ip, uint16_t port);
+//
+//         NetworkCommand(const NetworkCommand& other);
+//
+//         virtual ~NetworkCommand();
+//
+//         [[nodiscard]]
+//         const IPAddress& getIp() const;
+//
+//         [[nodiscard]]
+//         uint16_t getPort() const;
+//
+//         [[nodiscard]]
+//         size_t getArgsSize() const;
+//
+//         void readArgs(uint8_t* dest, size_t pos, size_t size) const;
+//
+//         void writeArgs(size_t pos, uint8_t* src, size_t size);
+//
+//         const uint8_t& readArg(size_t pos) const;
+//
+//         void writeArg(size_t pos, uint8_t value);
+//
+//         size_t printTo(Print& p) const override = 0;
+//
+//     protected:
+//
+//         uint8_t args[32] {};
+//         size_t argsSize {};
+//
+//     private:
+//
+//         const IPAddress ip;
+//         const uint16_t port;
+// };
 
 #endif

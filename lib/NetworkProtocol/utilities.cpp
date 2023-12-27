@@ -22,9 +22,34 @@
 #include "utilities.hpp"
 
 #include <stdint.h>
+#include <stdio.h>
 
-CommandType commandTypeParse(uint8_t b) {
-    return static_cast<CommandType>(b);
+CommandType commandTypeParse(const uint8_t b) {
+    switch (b) {
+        case 'p':
+            return CommandType::Ping;
+        case 'X':
+            return CommandType::Reset;
+        case 't':
+            return CommandType::Telemetry;
+        case 'r':
+            return CommandType::RTCRead;
+        case 'R':
+            return CommandType::RTCSet;
+        case 'c':
+            return CommandType::ConfigRead;
+        case 'C':
+            return CommandType::ConfigSet;
+        case 'o':
+            return CommandType::OutputRead;
+        case 'O':
+            return CommandType::OutputSet;
+
+        default:
+            return CommandType::Null;
+    }
+
+    // return static_cast<CommandType>(b);
 }
 
 uint8_t commandTypeSerialize(CommandType c) {
@@ -95,4 +120,17 @@ const char* configParamToString(const ConfigParam& p) {
         default:
             return "";
     }
+}
+
+void payloadToHex(char* dest, const char* payload, const size_t& size) {
+    char* output = dest;
+    for (size_t i = 0; i < size; i++) {
+        if (i > 0) {
+            *output = ' ';
+            output += 1;
+        }
+        sprintf(output, "%02x", payload[i]);
+        output += 2;
+    }
+    *output = '\0';
 }

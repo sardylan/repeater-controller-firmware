@@ -27,28 +27,31 @@
 #define CONFIG_MAIN_VOLTAGE_OFF_PARAM 'o'
 #define CONFIG_MAIN_VOLTAGE_ON_PARAM 'O'
 
-class Config
-{
-public:
-    Config();
+class Config {
+    public:
 
-    ~Config();
+        Config();
 
-    [[nodiscard]] float getMainVoltageOff() const;
+        ~Config();
 
-    void setMainVoltageOff(float newValue);
+        [[nodiscard]]
+        float getMainVoltageOff() const;
 
-    [[nodiscard]] float getMainVoltageOn() const;
+        void setMainVoltageOff(float newValue);
 
-    void setMainVoltageOn(float newValue);
+        [[nodiscard]]
+        float getMainVoltageOn() const;
 
-private:
-    float mainVoltageOff;
-    float mainVoltageOn;
+        void setMainVoltageOn(float newValue);
 
-    static float readFromEEPROM(int address);
+    private:
 
-    static void writeToEEPROM(int address, const float& value);
+        float mainVoltageOff;
+        float mainVoltageOn;
+
+        static float readFromEEPROM(int address);
+
+        static void writeToEEPROM(int address, const float& value);
 };
 
 #endif

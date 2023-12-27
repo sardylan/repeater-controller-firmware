@@ -27,25 +27,24 @@
 #define RELAIS_NUMBER 8
 
 class Relais {
+    public:
 
-public:
+        static Relais* getInstance();
 
-    static Relais *getInstance();
+        [[nodiscard]]
+        bool getStatus(int item) const;
 
-    [[nodiscard]] bool getStatus(int item) const;
+        void setStatus(int item, bool newStatus);
 
-    void setStatus(int item, bool newStatus);
+    private:
 
-private:
+        static Relais* instance;
 
-    static Relais *instance;
+        explicit Relais();
 
-    explicit Relais();
+        ~Relais();
 
-    ~Relais();
-
-    bool status[RELAIS_NUMBER]{};
-
+        bool status[RELAIS_NUMBER];
 };
 
 #endif

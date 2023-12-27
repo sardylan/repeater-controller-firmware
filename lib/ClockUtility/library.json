@@ -1,3 +1,6 @@
 {
-  "headers": ["ClockUtility.hpp", "CustomDateTime.hpp"]
+  "headers": [
+    "ClockUtility.hpp",
+    "CustomDateTime.hpp"
+  ]
 }

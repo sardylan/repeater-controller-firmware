@@ -19,33 +19,41 @@
  *
  */
 
-#include "request.hpp"
-#include "utilities.hpp"
-
-RequestNetworkCommand::RequestNetworkCommand() = default;
-
-RequestNetworkCommand::RequestNetworkCommand(const IPAddress& ip, const uint16_t& port) : NetworkCommand(ip, port) {
-}
-
-RequestNetworkCommand::RequestNetworkCommand(const RequestNetworkCommand& other) = default;
-
-RequestNetworkCommand::~RequestNetworkCommand() = default;
-
-CommandType RequestNetworkCommand::getCommandType() const {
-    return commandType;
-}
-
-void RequestNetworkCommand::setCommandType(const CommandType& commandType) {
-    this->commandType = commandType;
-}
-
-size_t RequestNetworkCommand::printTo(Print& p) const {
-    size_t ln = p.print(commandTypeToString(commandType));
-    ln += p.print(" command of ");
-    ln += p.print(getArgsSize());
-    ln += p.print(" bytes from ");
-    ln += p.print(getIp());
-    ln += p.print(":");
-    ln += p.print(getPort());
-    return ln;
-}
+// #include "request.hpp"
+//
+// #include "utilities.hpp"
+//
+// RequestNetworkCommand::RequestNetworkCommand() : valid(false) {
+// }
+//
+// RequestNetworkCommand::RequestNetworkCommand(IPAddress ip, uint16_t port) : NetworkCommand(ip, port), valid(true) {
+// }
+//
+// RequestNetworkCommand::RequestNetworkCommand(const RequestNetworkCommand& other) = default;
+//
+// RequestNetworkCommand::~RequestNetworkCommand() = default;
+//
+// bool RequestNetworkCommand::isValid() const {
+//     return valid;
+// }
+//
+// CommandType RequestNetworkCommand::getCommandType() const {
+//     return commandType;
+// }
+//
+// void RequestNetworkCommand::setCommandType(CommandType commandType) {
+//     this->commandType = commandType;
+//     if (commandType == CommandType::Null)
+//         valid = false;
+// }
+//
+// size_t RequestNetworkCommand::printTo(Print& p) const {
+//     size_t ln = p.print(commandTypeToString(commandType));
+//     ln += p.print(" command of ");
+//     ln += p.print(getArgsSize());
+//     ln += p.print(" bytes from ");
+//     ln += p.print(getIp());
+//     ln += p.print(":");
+//     ln += p.print(getPort());
+//     return ln;
+// }

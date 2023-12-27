@@ -21,38 +21,33 @@
 
 #include "EpeverClient.hpp"
 
-EpeverClient *EpeverClient::instance = nullptr;
+EpeverClient* EpeverClient::instance = nullptr;
 
-EpeverClient *EpeverClient::getInstance(Pin DI, Pin DE, Pin RE, Pin RO) {
-    if (EpeverClient::instance == nullptr)
-        EpeverClient::instance = new EpeverClient(DI, DE, RE, RO);
+EpeverClient* EpeverClient::getInstance(const Pin DI, const Pin DE, const Pin RE, const Pin RO) {
+    if (instance == nullptr)
+        instance = new EpeverClient(DI, DE, RE, RO);
 
-    return EpeverClient::instance;
+    return instance;
 }
 
-EpeverClient::EpeverClient(Pin DI, Pin DE, Pin RE, Pin RO) :
-        DI(DI), DE(DE), RE(RE), RO(RO){
-//        softwareSerial(EpeverClient::RO, EpeverClient::DI) {
-    data = {};
-    status = {};
-
+EpeverClient::EpeverClient(const Pin DI, const Pin DE, const Pin RE, const Pin RO) : DI(DI), DE(DE), RE(RE), RO(RO) {
     node.preTransmission(preTransmissionProxy);
     node.postTransmission(postTransmissionProxy);
 }
 
 EpeverClient::~EpeverClient() = default;
 
-const EpeverData &EpeverClient::getData() const {
+const EpeverData& EpeverClient::getData() const {
     return data;
 }
 
-const EpeverStatus &EpeverClient::getStatus() const {
+const EpeverStatus& EpeverClient::getStatus() const {
     return status;
 }
 
 void EpeverClient::begin() {
-    pinMode(EpeverClient::RE, OUTPUT);
-    pinMode(EpeverClient::DE, OUTPUT);
+    pinMode(RE, OUTPUT);
+    pinMode(DE, OUTPUT);
 
     postTransmission();
 
@@ -62,13 +57,13 @@ void EpeverClient::begin() {
 }
 
 void EpeverClient::preTransmission() const {
-    digitalWrite(EpeverClient::RE, HIGH);
-    digitalWrite(EpeverClient::DE, HIGH);
+    digitalWrite(RE, HIGH);
+    digitalWrite(DE, HIGH);
 }
 
 void EpeverClient::postTransmission() const {
-    digitalWrite(EpeverClient::RE, LOW);
-    digitalWrite(EpeverClient::DE, LOW);
+    digitalWrite(RE, LOW);
+    digitalWrite(DE, LOW);
 }
 
 void preTransmissionProxy() {
@@ -80,7 +75,7 @@ void postTransmissionProxy() {
 }
 
 void EpeverClient::readData() {
-    uint8_t result = node.readInputRegisters(0x3100, 6);
+    const uint8_t result = node.readInputRegisters(0x3100, 6);
     if (result != ModbusMaster::ku8MBSuccess) {
         data = {};
         return;
@@ -95,34 +90,31 @@ void EpeverClient::readData() {
 }
 
 void EpeverClient::readStatus() {
-    uint8_t result = node.readInputRegisters(0x3200, 3);
+    const uint8_t result = node.readInputRegisters(0x3200, 3);
     if (result != ModbusMaster::ku8MBSuccess) {
         status = {};
         return;
     }
 
-    uint16_t tempBuffer;
-    uint8_t tempData;
-
-    tempBuffer = node.getResponseBuffer(0x00);
+    uint16_t tempBuffer = node.getResponseBuffer(0x00);
     bool wrongVoltageIdentification = tempBuffer & 0x8000;
 
-    tempData = (tempBuffer & 0x00F0) >> 4; // D7-D4 shifted down
+    uint8_t tempData = (tempBuffer & 0x00F0) >> 4;    // D7-D4 shifted down
     auto temperature = static_cast<Temperature>(tempData);
 
-    tempData = (tempBuffer & 0x000F);   // D3-D0
+    tempData = (tempBuffer & 0x000F);    // D3-D0
     auto battery = static_cast<Battery>(tempData);
 
     tempBuffer = node.getResponseBuffer(0x01);
 
-    tempData = (tempBuffer & 0x000C) >> 2; // D3-D2 shifted down
+    tempData = (tempBuffer & 0x000C) >> 2;    // D3-D2 shifted down
     auto charging = static_cast<Charging>(tempData);
 
-    tempData = (tempBuffer & 0xC000) >> 14; // D15-D14 shifted down
+    tempData = (tempBuffer & 0xC000) >> 14;    // D15-D14 shifted down
     auto arrays = static_cast<Arrays>(tempData);
 
     tempBuffer = node.getResponseBuffer(0x02);
-    tempData = (tempBuffer & 0x3000) >> 12; // D3-12 shifted down
+    tempData = (tempBuffer & 0x3000) >> 12;    // D3-12 shifted down
     auto load = static_cast<Load>(tempData);
 
     status = {wrongVoltageIdentification, temperature, battery, charging, arrays, load};

@@ -23,13 +23,12 @@
 
 #include <Print.h>
 
-CustomDateTime::CustomDateTime(const DateTime &dateTime) : DateTime(dateTime) {}
+CustomDateTime::CustomDateTime(const DateTime& dateTime) : DateTime(dateTime) {
+}
 
-CustomDateTime::~CustomDateTime() = default;
-
-size_t CustomDateTime::printTo(Print &p) const {
-    struct tm tm{};
-    uint32_t ts = unixtime();
+size_t CustomDateTime::printTo(Print& p) const {
+    tm tm {};
+    const uint32_t ts = unixtime();
     localtime_r(&ts, &tm);
 
     char buffer[20];

@@ -19,38 +19,41 @@
  *
  */
 
-#ifndef STATION_MGMT__EPEVER_DATA__H
-#define STATION_MGMT__EPEVER_DATA__H
+#ifndef STATION_MGMT__EPEVER_CLIENT__EPEVER_DATA__H
+#define STATION_MGMT__EPEVER_CLIENT__EPEVER_DATA__H
 
 class EpeverData {
+    public:
 
-public:
+        EpeverData(float panelVoltage, float panelCurrent, float batteryVoltage, float batteryChargeCurrent);
 
-    EpeverData(float panelVoltage, float panelCurrent, float batteryVoltage, float batteryChargeCurrent);
+        EpeverData();
 
-    EpeverData();
+        EpeverData(const EpeverData& other);
 
-    EpeverData(const EpeverData &other);
+        [[nodiscard]]
+        bool isValid() const;
 
-    [[nodiscard]] bool isValid() const;
+        [[nodiscard]]
+        float getPanelVoltage() const;
 
-    [[nodiscard]] float getPanelVoltage() const;
+        [[nodiscard]]
+        float getPanelCurrent() const;
 
-    [[nodiscard]] float getPanelCurrent() const;
+        [[nodiscard]]
+        float getBatteryVoltage() const;
 
-    [[nodiscard]] float getBatteryVoltage() const;
+        [[nodiscard]]
+        float getBatteryChargeCurrent() const;
 
-    [[nodiscard]] float getBatteryChargeCurrent() const;
+    private:
 
-private:
+        bool valid;
 
-    bool valid;
-
-    float panelVoltage;
-    float panelCurrent;
-    float batteryVoltage;
-    float batteryChargeCurrent;
-
+        float panelVoltage;
+        float panelCurrent;
+        float batteryVoltage;
+        float batteryChargeCurrent;
 };
 
 #endif

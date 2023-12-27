@@ -19,35 +19,34 @@
  *
  */
 
-#ifndef STATION_MGMT__CLOCK_UTILITY__H
-#define STATION_MGMT__CLOCK_UTILITY__H
+#ifndef STATION_MGMT__CLOCK_UTILITY__CLOCK_UTILITY__H
+#define STATION_MGMT__CLOCK_UTILITY__CLOCK_UTILITY__H
 
 #include <DS3231.h>
 
 #include "CustomDateTime.hpp"
 
 class ClockUtility {
+    public:
 
-public:
+        static ClockUtility* getInstance();
 
-    static ClockUtility *getInstance();
+        void begin();
 
-    void begin();
+        void setEpoch(time_t newTimestamp);
 
-    void setEpoch(time_t newTimestamp);
+        [[nodiscard]]
+        static CustomDateTime now();
 
-    [[nodiscard]] static CustomDateTime now();
+    private:
 
-private:
+        ClockUtility();
 
-    ClockUtility();
+        ~ClockUtility();
 
-    ~ClockUtility();
+        static ClockUtility* instance;
 
-    static ClockUtility *instance;
-
-    DS3231 rtc;
-
+        DS3231 rtc;
 };
 
 #endif

@@ -25,38 +25,32 @@
 
 #include "eeprom.hpp"
 
-Config::Config()
-{
+Config::Config() {
     mainVoltageOff = readFromEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF);
     mainVoltageOn = readFromEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON);
 }
 
 Config::~Config() = default;
 
-float Config::getMainVoltageOff() const
-{
+float Config::getMainVoltageOff() const {
     return mainVoltageOff;
 }
 
-void Config::setMainVoltageOff(const float newValue)
-{
+void Config::setMainVoltageOff(const float newValue) {
     mainVoltageOff = newValue;
     writeToEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_OFF, mainVoltageOff);
 }
 
-float Config::getMainVoltageOn() const
-{
+float Config::getMainVoltageOn() const {
     return mainVoltageOn;
 }
 
-void Config::setMainVoltageOn(float newValue)
-{
+void Config::setMainVoltageOn(float newValue) {
     mainVoltageOn = newValue;
     writeToEEPROM(EEPROM_ADDRESS_CONFIG_VOLTAGE_ON, mainVoltageOn);
 }
 
-float Config::readFromEEPROM(const int address)
-{
+float Config::readFromEEPROM(const int address) {
     float value;
     auto* valuePointer = reinterpret_cast<uint8_t*>(&value);
     valuePointer[0] = EEPROM.read(address + 0);
@@ -66,9 +60,8 @@ float Config::readFromEEPROM(const int address)
     return value;
 }
 
-void Config::writeToEEPROM(const int address, const float& value)
-{
-    const auto* valuePointer = reinterpret_cast<const uint8_t*>(&value);
+void Config::writeToEEPROM(const int address, const float& value) {
+    auto* valuePointer = reinterpret_cast<const uint8_t*>(&value);
     EEPROM.write(address + 0, valuePointer[0]);
     EEPROM.write(address + 1, valuePointer[1]);
     EEPROM.write(address + 2, valuePointer[2]);

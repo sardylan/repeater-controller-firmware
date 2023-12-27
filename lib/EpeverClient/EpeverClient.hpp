@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef STATION_MGMT__EPEVER_CLIENT__H
-#define STATION_MGMT__EPEVER_CLIENT__H
+#ifndef STATION_MGMT__EPEVER_CLIENT__EPEVER_CLIENT__H
+#define STATION_MGMT__EPEVER_CLIENT__EPEVER_CLIENT__H
 
 #include <ModbusMaster.h>
 
@@ -33,47 +33,47 @@
 #define MODBUS_CLIENT_ID 1
 
 class EpeverClient {
+    public:
 
-public:
+        static EpeverClient* getInstance(Pin DI, Pin DE, Pin RE, Pin RO);
 
-    static EpeverClient *getInstance(Pin DI, Pin DE, Pin RE, Pin RO);
+        [[nodiscard]]
+        const EpeverData& getData() const;
 
-    [[nodiscard]] const EpeverData &getData() const;
+        [[nodiscard]]
+        const EpeverStatus& getStatus() const;
 
-    [[nodiscard]] const EpeverStatus &getStatus() const;
+        void begin();
 
-    void begin();
+        void readData();
 
-    void readData();
+        void readStatus();
 
-    void readStatus();
+    private:
 
-private:
+        static EpeverClient* instance;
 
-    static EpeverClient *instance;
+        const Pin DI;
+        const Pin DE;
+        const Pin RE;
+        const Pin RO;
 
-    const Pin DI;
-    const Pin DE;
-    const Pin RE;
-    const Pin RO;
+        ModbusMaster node;
 
-    ModbusMaster node;
+        explicit EpeverClient(Pin DI, Pin DE, Pin RE, Pin RO);
 
-    explicit EpeverClient(Pin DI, Pin DE, Pin RE, Pin RO);
+        ~EpeverClient();
 
-    ~EpeverClient();
+        EpeverData data;
+        EpeverStatus status;
 
-    EpeverData data;
-    EpeverStatus status;
+        void preTransmission() const;
 
-    void preTransmission() const;
+        void postTransmission() const;
 
-    void postTransmission() const;
+        friend void preTransmissionProxy();
 
-    friend void preTransmissionProxy();
-
-    friend void postTransmissionProxy();
-
+        friend void postTransmissionProxy();
 };
 
 void preTransmissionProxy();

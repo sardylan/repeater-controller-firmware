@@ -22,48 +22,50 @@
 #ifndef STATION_MGMT__NETWORK_PROTOCOL__PROTOCOL__H
 #define STATION_MGMT__NETWORK_PROTOCOL__PROTOCOL__H
 
-#include <Ethernet.h>
-#include <WString.h>
-
-#include "request.hpp"
-#include "response.hpp"
-
-#define DEFAULT_UDP_PORT 8888
-
-class NetworkProtocol {
-    public:
-
-        static NetworkProtocol* getInstance(
-            const uint8_t* mac, const String& ip, const String& dns, const String& gateway, const String& subnet);
-
-        [[nodiscard]]
-        uint16_t getUdpPort() const;
-
-        void setUdpPort(uint16_t newValue);
-
-        void begin();
-
-        RequestNetworkCommand receive();
-
-        void send(const ResponseNetworkCommand& command);
-
-    private:
-
-        NetworkProtocol(
-            const uint8_t* mac, const String& ip, const String& dns, const String& gateway, const String& subnet);
-
-        ~NetworkProtocol();
-
-        static NetworkProtocol* instance;
-
-        uint8_t mac[6] {};
-        IPAddress ip;
-        IPAddress dns;
-        IPAddress gateway;
-        IPAddress subnet;
-
-        uint16_t udpPort;
-        EthernetUDP udp;
-};
+// #include <Ethernet.h>
+// #include <WString.h>
+//
+// #include "request.hpp"
+// #include "response.hpp"
+//
+// #define DEFAULT_UDP_PORT 8888
+//
+// class NetworkProtocol {
+//     public:
+//
+//         static NetworkProtocol* getInstance(
+//             const uint8_t* mac, const String& ip, const String& dns, const String& gateway, const String& subnet);
+//
+//         [[nodiscard]]
+//         uint16_t getUdpPort() const;
+//
+//         void setUdpPort(uint16_t newValue);
+//
+//         void begin();
+//
+//         RequestNetworkCommand receive();
+//
+//         void send(ResponseNetworkCommand command);
+//
+//         const EthernetUDP& getUdp() const;
+//
+//     private:
+//
+//         NetworkProtocol(
+//             const uint8_t* mac, const String& ip, const String& dns, const String& gateway, const String& subnet);
+//
+//         ~NetworkProtocol();
+//
+//         static NetworkProtocol* instance;
+//
+//         uint8_t mac[6] {};
+//         IPAddress ip;
+//         IPAddress dns;
+//         IPAddress gateway;
+//         IPAddress subnet;
+//
+//         uint16_t udpPort;
+//         EthernetUDP udp;
+// };
 
 #endif

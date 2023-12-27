@@ -21,9 +21,9 @@
 
 #include "ClockUtility.hpp"
 
-ClockUtility *ClockUtility::instance = nullptr;
+ClockUtility* ClockUtility::instance = nullptr;
 
-ClockUtility *ClockUtility::getInstance() {
+ClockUtility* ClockUtility::getInstance() {
     if (instance == nullptr)
         instance = new ClockUtility();
     return instance;
@@ -42,6 +42,5 @@ void ClockUtility::setEpoch(const time_t newTimestamp) {
 }
 
 CustomDateTime ClockUtility::now() {
-    const DateTime &dateTime = RTClib::now();
-    return CustomDateTime(dateTime);
+    return CustomDateTime(RTClib::now());
 }

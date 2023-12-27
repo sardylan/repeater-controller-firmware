@@ -21,32 +21,33 @@
 
 #include "EpeverStatus.hpp"
 
-EpeverStatus::EpeverStatus(bool wrongVoltageIdentification,
-                           Temperature temperature,
-                           Battery battery,
-                           Charging charging,
-                           Arrays arrays,
-                           Load load) :
-        valid(true),
-        wrongVoltageIdentification(wrongVoltageIdentification),
-        temperature(temperature),
-        battery(battery),
-        charging(charging),
-        arrays(arrays),
-        load(load) {
+EpeverStatus::EpeverStatus(
+    const bool wrongVoltageIdentification,
+    const Temperature temperature,
+    const Battery battery,
+    const Charging charging,
+    const Arrays arrays,
+    const Load load)
+    : valid(true),
+      wrongVoltageIdentification(wrongVoltageIdentification),
+      temperature(temperature),
+      battery(battery),
+      charging(charging),
+      arrays(arrays),
+      load(load) {
 }
 
-EpeverStatus::EpeverStatus() :
-        valid(false),
-        wrongVoltageIdentification(false),
-        temperature(Temperature::Normal),
-        battery(Battery::Normal),
-        charging(Charging::NoCharging),
-        arrays(Arrays::NoInputPower),
-        load(Load::Light) {
+EpeverStatus::EpeverStatus()
+    : valid(false),
+      wrongVoltageIdentification(false),
+      temperature(Temperature::Normal),
+      battery(Battery::Normal),
+      charging(Charging::NoCharging),
+      arrays(Arrays::NoInputPower),
+      load(Load::Light) {
 }
 
-EpeverStatus::EpeverStatus(const EpeverStatus &other) = default;
+EpeverStatus::EpeverStatus(const EpeverStatus& other) = default;
 
 bool EpeverStatus::isValid() const {
     return valid;
@@ -76,9 +77,8 @@ Load EpeverStatus::getLoad() const {
     return load;
 }
 
-const char *temperatureToString(const Temperature &temperature) {
+const char* temperatureToString(const Temperature& temperature) {
     switch (temperature) {
-
         case Temperature::Normal:
             return "Normal";
         case Temperature::OverTemp:
@@ -90,9 +90,8 @@ const char *temperatureToString(const Temperature &temperature) {
     return nullptr;
 }
 
-const char *batteryToString(const Battery &battery) {
+const char* batteryToString(const Battery& battery) {
     switch (battery) {
-
         case Battery::Normal:
             return "Normal";
         case Battery::OverVoltage:
@@ -108,9 +107,8 @@ const char *batteryToString(const Battery &battery) {
     return nullptr;
 }
 
-const char *chargingToString(const Charging &charging) {
+const char* chargingToString(const Charging& charging) {
     switch (charging) {
-
         case Charging::NoCharging:
             return "NoCharging";
         case Charging::Float:
@@ -124,9 +122,8 @@ const char *chargingToString(const Charging &charging) {
     return nullptr;
 }
 
-const char *arraysToString(const Arrays &arrays) {
+const char* arraysToString(const Arrays& arrays) {
     switch (arrays) {
-
         case Arrays::Normal:
             return "Normal";
         case Arrays::NoInputPower:
@@ -140,9 +137,8 @@ const char *arraysToString(const Arrays &arrays) {
     return nullptr;
 }
 
-const char *loadToString(const Load &load) {
+const char* loadToString(const Load& load) {
     switch (load) {
-
         case Load::Light:
             return "Light";
         case Load::Moderate:

@@ -21,23 +21,19 @@
 
 #include "EpeverData.hpp"
 
-EpeverData::EpeverData(float panelVoltage, float panelCurrent, float batteryVoltage, float batteryChargeCurrent) :
-        valid(true),
-        panelVoltage(panelVoltage),
-        panelCurrent(panelCurrent),
-        batteryVoltage(batteryVoltage),
-        batteryChargeCurrent(batteryChargeCurrent) {
+EpeverData::EpeverData(
+    const float panelVoltage, const float panelCurrent, const float batteryVoltage, const float batteryChargeCurrent)
+    : valid(true),
+      panelVoltage(panelVoltage),
+      panelCurrent(panelCurrent),
+      batteryVoltage(batteryVoltage),
+      batteryChargeCurrent(batteryChargeCurrent) {
 }
 
-EpeverData::EpeverData() :
-        valid(false),
-        panelVoltage(0),
-        panelCurrent(0),
-        batteryVoltage(0),
-        batteryChargeCurrent(0) {
+EpeverData::EpeverData() : valid(false), panelVoltage(0), panelCurrent(0), batteryVoltage(0), batteryChargeCurrent(0) {
 }
 
-EpeverData::EpeverData(const EpeverData &other) = default;
+EpeverData::EpeverData(const EpeverData& other) = default;
 
 bool EpeverData::isValid() const {
     return valid;

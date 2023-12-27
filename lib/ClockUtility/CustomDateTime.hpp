@@ -19,21 +19,17 @@
  *
  */
 
-#ifndef STATION_MGMT__CUSTOM_DATE_TIME__H
-#define STATION_MGMT__CUSTOM_DATE_TIME__H
+#ifndef STATION_MGMT__CLOCK_UTILITY__CUSTOM_DATE_TIME__H
+#define STATION_MGMT__CLOCK_UTILITY__CUSTOM_DATE_TIME__H
 
 #include <DS3231.h>
 
-class CustomDateTime : public DateTime, public Printable {
+class CustomDateTime final : public DateTime, public Printable {
+    public:
 
-public:
+        explicit CustomDateTime(const DateTime& dateTime);
 
-    explicit CustomDateTime(const DateTime &dateTime);
-
-    ~CustomDateTime();
-
-    size_t printTo(Print &p) const override;
-
+        size_t printTo(Print& p) const override;
 };
 
 #endif

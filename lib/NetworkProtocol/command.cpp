@@ -19,59 +19,56 @@
  *
  */
 
-#include "command.hpp"
-
-#include <IPAddress.h>
-#include <stdint.h>
-
-NetworkCommand::NetworkCommand(const IPAddress& ip, const uint16_t port) : valid(true), ip(ip), port(port) {
-    argsSize = 0;
-}
-
-NetworkCommand::NetworkCommand() : valid(false), port(0) {
-    argsSize = 0;
-}
-
-NetworkCommand::NetworkCommand(const NetworkCommand& other) = default;
-
-NetworkCommand::~NetworkCommand() = default;
-
-bool NetworkCommand::isValid() const {
-    return valid;
-}
-
-const IPAddress& NetworkCommand::getIp() const {
-    return ip;
-}
-
-uint16_t NetworkCommand::getPort() const {
-    return port;
-}
-
-size_t NetworkCommand::getArgsSize() const {
-    return argsSize;
-}
-
-void NetworkCommand::readArgs(uint8_t* dest, const size_t& pos, const size_t& size) const {
-    memcpy(dest, reinterpret_cast<void*>(args[pos]), size);
-}
-
-void NetworkCommand::writeArgs(const size_t& pos, const uint8_t* src, const size_t& size) {
-    memcpy(reinterpret_cast<void*>(args[pos]), src, size);
-
-    const size_t newSize = pos + size;
-    if (argsSize < newSize)
-        argsSize = newSize;
-}
-
-const uint8_t& NetworkCommand::readArg(const size_t& pos) const {
-    return args[pos];
-}
-
-void NetworkCommand::writeArg(const size_t& pos, const uint8_t& value) {
-    args[pos] = value;
-
-    const size_t newSize = pos + 1;
-    if (argsSize < newSize)
-        argsSize = newSize;
-}
+// #include "command.hpp"
+//
+// #include <IPAddress.h>
+// #include <stdint.h>
+//
+// NetworkCommand::NetworkCommand(IPAddress ip, uint16_t port) : ip(ip), port(port) {
+//     argsSize = 0;
+// }
+//
+// NetworkCommand::NetworkCommand() : port(0) {
+//     argsSize = 0;
+// }
+//
+// NetworkCommand::NetworkCommand(const NetworkCommand& other) = default;
+//
+// NetworkCommand::~NetworkCommand() = default;
+//
+// const IPAddress& NetworkCommand::getIp() const {
+//     return ip;
+// }
+//
+// uint16_t NetworkCommand::getPort() const {
+//     return port;
+// }
+//
+// size_t NetworkCommand::getArgsSize() const {
+//     return argsSize;
+// }
+//
+// void NetworkCommand::readArgs(uint8_t* dest, size_t pos, size_t size) const {
+//     memcpy(dest, reinterpret_cast<void*>(args[pos]), size);
+// }
+//
+// void NetworkCommand::writeArgs(size_t pos, uint8_t* src, size_t size) {
+//     if (size > 0)
+//         memcpy(reinterpret_cast<void*>(args[pos]), src, size);
+//
+//     const size_t newSize = pos + size;
+//     if (argsSize < newSize)
+//         argsSize = newSize;
+// }
+//
+// const uint8_t& NetworkCommand::readArg(size_t pos) const {
+//     return args[pos];
+// }
+//
+// void NetworkCommand::writeArg(size_t pos, uint8_t value) {
+//     args[pos] = value;
+//
+//     const size_t newSize = pos + 1;
+//     if (argsSize < newSize)
+//         argsSize = newSize;
+// }

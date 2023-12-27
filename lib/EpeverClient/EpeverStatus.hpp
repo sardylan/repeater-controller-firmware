@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef STATION_MGMT__EPEVER_STATUS__H
-#define STATION_MGMT__EPEVER_STATUS__H
+#ifndef STATION_MGMT__EPEVER_CLIENT__EPEVER_STATUS__H
+#define STATION_MGMT__EPEVER_CLIENT__EPEVER_STATUS__H
 
 enum class Temperature {
     Normal = 0x00,
@@ -58,55 +58,61 @@ enum class Load {
 };
 
 class EpeverStatus {
+    public:
 
-public:
+        EpeverStatus(
+            bool wrongVoltageIdentification,
+            Temperature temperature,
+            Battery battery,
+            Charging charging,
+            Arrays arrays,
+            Load load);
 
-    EpeverStatus(bool wrongVoltageIdentification,
-                 Temperature temperature,
-                 Battery battery,
-                 Charging charging,
-                 Arrays arrays,
-                 Load load);
+        EpeverStatus();
 
-    EpeverStatus();
+        EpeverStatus(const EpeverStatus& other);
 
-    EpeverStatus(const EpeverStatus &other);
+        [[nodiscard]]
+        bool isValid() const;
 
-    [[nodiscard]] bool isValid() const;
+        [[nodiscard]]
+        bool isWrongVoltageIdentification() const;
 
-    [[nodiscard]] bool isWrongVoltageIdentification() const;
+        [[nodiscard]]
+        Temperature getTemperature() const;
 
-    [[nodiscard]]  Temperature getTemperature() const;
+        [[nodiscard]]
+        Battery getBattery() const;
 
-    [[nodiscard]]  Battery getBattery() const;
+        [[nodiscard]]
+        Charging getCharging() const;
 
-    [[nodiscard]]  Charging getCharging() const;
+        [[nodiscard]]
+        Arrays getArrays() const;
 
-    [[nodiscard]]  Arrays getArrays() const;
+        [[nodiscard]]
+        Load getLoad() const;
 
-    [[nodiscard]]  Load getLoad() const;
+    private:
 
-private:
+        bool valid;
 
-    bool valid;
-
-    bool wrongVoltageIdentification;
-    Temperature temperature;
-    Battery battery;
-    Charging charging;
-    Arrays arrays;
-    Load load;
-
+        bool wrongVoltageIdentification;
+        Temperature temperature;
+        Battery battery;
+        Charging charging;
+        Arrays arrays;
+        Load load;
 };
 
-const char *temperatureToString(const Temperature &temperature);
+const char* temperatureToString(const Temperature& temperature);
 
-const char *batteryToString(const Battery &battery);
+const char* batteryToString(const Battery& battery);
 
-const char *chargingToString(const Charging &charging);
+const char* chargingToString(const Charging& charging);
 
-const char *arraysToString(const Arrays &arrays);
+const char* arraysToString(const Arrays& arrays);
 
-const char *loadToString(const Load &load);
+const char* loadToString(const Load& load);
 
 #endif
