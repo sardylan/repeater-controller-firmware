@@ -22,26 +22,38 @@
 #include "main.hpp"
 
 #include <Arduino.h>
+#include <DS3231.h>
 #include <Ethernet.h>
+#include <ModbusMaster.h>
 #include <Wire.h>
-
-#include <ClockUtility.hpp>
-#include <EpeverClient.hpp>
-#include <request.hpp>
-#include <response.hpp>
-#include <utilities.hpp>
 
 #include "config.hpp"
 #include "const.hpp"
+#include "enums.hpp"
+#include "protocol.hpp"
 #include "relais.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 
+DS3231 rtc;
+
 Config config;
 
-EpeverClient* epeverClient;
+ModbusMaster node;
+float panelVoltage;
+float panelCurrent;
+float batteryVoltage;
+float batteryChargeCurrent;
+
+bool wrongVoltageIdentification;
+Temperature temperature;
+Battery battery;
+Charging charging;
+Arrays arrays;
+Load load;
+
 EthernetUDP udp;
-ClockUtility* clockUtility;
+
 Relais* relais;
 
 declareLastExecution(ReceiveCommand);
@@ -87,8 +99,16 @@ void setup() {
     serialDebugln("done");
 
     serialDebug("Configuring EpeverClient... ");
-    epeverClient = EpeverClient::getInstance(PIN_EPEVER_DI, PIN_EPEVER_DE, PIN_EPEVER_RE, PIN_EPEVER_RO);
-    epeverClient->begin();
+    pinMode(PIN_EPEVER_RE, OUTPUT);
+    pinMode(PIN_EPEVER_DE, OUTPUT);
+
+    modbusPostTransmission();
+
+    Serial2.begin(MODBUS_BAUDRATE);
+
+    node.preTransmission(modbusPreTransmission);
+    node.postTransmission(modbusPostTransmission);
+    node.begin(MODBUS_CLIENT_ID, Serial2);
     serialDebugln("done");
 
     serialDebug("Configuring NetworkProtocol... ");
@@ -105,9 +125,8 @@ void setup() {
     udp.begin(NETWORK_UDP_PORT);
     serialDebugln("done");
 
-    serialDebug("Configuring ClockUtility... ");
-    clockUtility = ClockUtility::getInstance();
-    clockUtility->begin();
+    serialDebug("Configuring Clock... ");
+    rtc.setClockMode(false);
     serialDebugln("done");
 
     serialDebug("Configuring Relais... ");
@@ -129,7 +148,7 @@ void loop() {
 
     if (executeReset) {
         executeReset = false;
-        // resetFunc();
+        resetFunc();
     }
 }
 
@@ -140,147 +159,125 @@ void doReceiveCommand() {
     const IPAddress remoteIp = udp.remoteIP();
     const uint16_t remotePort = udp.remotePort();
 
-    uint8_t packetBuffer[64];
-    memset(packetBuffer, '\0', 64);
+    char requestPacket[NETWORK_BUFFER_SIZE];
+    char responsePacket[NETWORK_BUFFER_SIZE];
+    memset(requestPacket, '\0', NETWORK_BUFFER_SIZE);
+    memset(responsePacket, '\0', NETWORK_BUFFER_SIZE);
 
-    const int len = udp.read(reinterpret_cast<unsigned char*>(packetBuffer), 64);
-    if (len == 0)
+    const int requestSize = udp.read(requestPacket, NETWORK_BUFFER_SIZE);
+    if (requestSize == 0)
         return;
 
-    const int requestArgsSize = len - 1;
-    int responseArgsSize = 0;
+    size_t responseSize = 1;
 
-    // RequestNetworkCommand request(remoteIp, remotePort);
-
-    const CommandType commandType = commandTypeParse(packetBuffer[0]);
-    // request.setCommandType(commandType);
-    // request.writeArgs(0, packetBuffer + 1, len - 1);
-    if (commandType == CommandType::Null)
-        return;
-
-    serialDebug(commandTypeToString(commandType));
+    serialDebug(requestPacket[0]);
     serialDebug(" command of ");
-    serialDebug(requestArgsSize);
+    serialDebug(requestSize);
     serialDebug(" bytes from ");
     serialDebug(remoteIp);
     serialDebug(":");
     serialDebugln(remotePort);
 
-    auto responseType = ResponseType::Ack;
+    responsePacket[0] = requestPacket[0];
 
-    uint8_t args[32];
-    memset(args, '\0', 32);
-
-    switch (commandType) {
-        case CommandType::Ping:
+    switch (requestPacket[0]) {
+        case PROTOCOL_PING:
             {
-                responseArgsSize = 4;
+                responseSize += 4;
 
-                const CustomDateTime dateTime = ClockUtility::now();
+                const DateTime dateTime = RTClib::now();
                 uint32_t unixtime = dateTime.unixtime();
 
                 swapEndian(unixtime);
-                memcpy(reinterpret_cast<void*>(args[0]), reinterpret_cast<uint8_t*>(&unixtime), sizeof(uint32_t));
+                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
             }
             break;
 
-        case CommandType::Reset:
+        case PROTOCOL_RESET:
             {
                 serialDebugln("Preparing for executing reset");
                 executeReset = true;
             }
             break;
 
-        case CommandType::Telemetry:
+        case PROTOCOL_TELEMETRY:
             {
-                responseArgsSize = 21;
+                responseSize += 21;
 
-                const EpeverData& data = epeverClient->getData();
-
-                const CustomDateTime dateTime = ClockUtility::now();
+                const DateTime dateTime = RTClib::now();
                 uint32_t unixtime = dateTime.unixtime();
                 swapEndian(unixtime);
 
-                float panelVoltage = data.getPanelVoltage();
-                swapEndian(panelVoltage);
+                float tempPanelVoltage = panelVoltage;
+                swapEndian(tempPanelVoltage);
 
-                float panelCurrent = data.getPanelCurrent();
-                swapEndian(panelCurrent);
+                float tempPanelCurrent = panelCurrent;
+                swapEndian(tempPanelCurrent);
 
-                float batteryVoltage = data.getBatteryVoltage();
-                swapEndian(batteryVoltage);
+                float tempBatteryVoltage = batteryVoltage;
+                swapEndian(tempBatteryVoltage);
 
-                float batteryChargeCurrent = data.getBatteryChargeCurrent();
-                swapEndian(batteryChargeCurrent);
+                float tempBatteryChargeCurrent = batteryChargeCurrent;
+                swapEndian(tempBatteryChargeCurrent);
 
-                memcpy(reinterpret_cast<void*>(args[0]), &unixtime, sizeof(uint32_t));
-                memcpy(reinterpret_cast<void*>(args[4]), &panelVoltage, sizeof(float));
-                memcpy(reinterpret_cast<void*>(args[8]), &panelCurrent, sizeof(float));
-                memcpy(reinterpret_cast<void*>(args[12]), &batteryVoltage, sizeof(float));
-                memcpy(reinterpret_cast<void*>(args[16]), &batteryChargeCurrent, sizeof(float));
-                args[20] = globalStatus ? 0x01 : 0x00;
+                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
+                memcpy(responsePacket + 5, &tempPanelVoltage, sizeof(float));
+                memcpy(responsePacket + 9, &tempPanelCurrent, sizeof(float));
+                memcpy(responsePacket + 13, &tempBatteryVoltage, sizeof(float));
+                memcpy(responsePacket + 17, &tempBatteryChargeCurrent, sizeof(float));
+                responsePacket[21] = globalStatus ? 0x01 : 0x00;
             }
             break;
 
-        case CommandType::RTCRead:
+        case PROTOCOL_RTC_READ:
             {
-                responseArgsSize = 4;
+                responseSize += 4;
 
-                const CustomDateTime dateTime = ClockUtility::now();
+                const DateTime dateTime = RTClib::now();
                 uint32_t unixtime = dateTime.unixtime();
-
                 swapEndian(unixtime);
-                memcpy(reinterpret_cast<void*>(args[0]), &unixtime, sizeof(uint32_t));
+                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
             }
             break;
 
-        case CommandType::RTCSet:
+        case PROTOCOL_RTC_SET:
             {
-                responseArgsSize = 4;
+                responseSize += 4;
 
                 time_t newUnixtime;
-                memcpy(&newUnixtime, packetBuffer + 1, sizeof(time_t));
+                memcpy(&newUnixtime, requestPacket + 1, sizeof(time_t));
                 swapEndian(newUnixtime);
-                clockUtility->setEpoch(newUnixtime);
+                rtc.setEpoch(newUnixtime);
 
-                const CustomDateTime dateTime = ClockUtility::now();
+                const DateTime dateTime = RTClib::now();
                 uint32_t unixtime = dateTime.unixtime();
-
                 swapEndian(unixtime);
-                memcpy(reinterpret_cast<void*>(args[0]), &unixtime, sizeof(uint32_t));
+                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
             }
             break;
 
-        case CommandType::ConfigRead:
+        case PROTOCOL_CONFIG_READ:
             {
-                responseArgsSize = 1;
+                responseSize += 1;
 
-                const uint8_t b = packetBuffer[1];
-                args[0] = b;
+                responsePacket[1] = requestPacket[1];
 
-                const ConfigParam configParam = configParamParse(b);
-                switch (configParam) {
-                    case ConfigParam::MainVoltageOff:
+                switch (requestPacket[1]) {
+                    case CONFIG_MAIN_VOLTAGE_OFF_PARAM:
                         {
-                            responseArgsSize += 4;
+                            responseSize += sizeof(float);
                             float mainVoltageOff = config.getMainVoltageOff();
                             swapEndian(mainVoltageOff);
-                            memcpy(
-                                reinterpret_cast<void*>(args[1]),
-                                reinterpret_cast<uint8_t*>(&mainVoltageOff),
-                                sizeof(float));
+                            memcpy(responsePacket + 2, &mainVoltageOff, sizeof(float));
                         }
                         break;
 
-                    case ConfigParam::MainVoltageOn:
+                    case CONFIG_MAIN_VOLTAGE_ON_PARAM:
                         {
-                            responseArgsSize += 4;
+                            responseSize += sizeof(float);
                             float mainVoltageOn = config.getMainVoltageOn();
                             swapEndian(mainVoltageOn);
-                            memcpy(
-                                reinterpret_cast<void*>(args[1]),
-                                reinterpret_cast<uint8_t*>(&mainVoltageOn),
-                                sizeof(float));
+                            memcpy(responsePacket + 2, &mainVoltageOn, sizeof(float));
                         }
                         break;
 
@@ -290,46 +287,38 @@ void doReceiveCommand() {
             }
             break;
 
-        case CommandType::ConfigSet:
+        case PROTOCOL_CONFIG_SET:
             {
-                responseArgsSize = 1;
+                responseSize += 1;
 
-                const uint8_t b = packetBuffer[1];
-                args[0] = b;
+                responsePacket[1] = requestPacket[1];
 
-                const ConfigParam configParam = configParamParse(b);
-                switch (configParam) {
-                    case ConfigParam::MainVoltageOff:
+                switch (requestPacket[1]) {
+                    case CONFIG_MAIN_VOLTAGE_OFF_PARAM:
                         {
-                            responseArgsSize += 4;
+                            responseSize += sizeof(float);
 
                             float value;
-                            memcpy(reinterpret_cast<uint8_t*>(&value), packetBuffer + 2, sizeof(float));
+                            memcpy(&value, requestPacket + 2, sizeof(float));
                             config.setMainVoltageOff(value);
 
                             float mainVoltageOff = config.getMainVoltageOff();
                             swapEndian(mainVoltageOff);
-                            memcpy(
-                                reinterpret_cast<void*>(args[1]),
-                                reinterpret_cast<uint8_t*>(&mainVoltageOff),
-                                sizeof(float));
+                            memcpy(responsePacket + 2, &mainVoltageOff, sizeof(float));
                         }
                         break;
 
-                    case ConfigParam::MainVoltageOn:
+                    case CONFIG_MAIN_VOLTAGE_ON_PARAM:
                         {
-                            responseArgsSize += 4;
+                            responseSize += sizeof(float);
 
                             float value;
-                            memcpy(reinterpret_cast<uint8_t*>(&value), packetBuffer + 2, sizeof(float));
+                            memcpy(&value, requestPacket + 2, sizeof(float));
                             config.setMainVoltageOn(value);
 
                             float mainVoltageOn = config.getMainVoltageOn();
                             swapEndian(mainVoltageOn);
-                            memcpy(
-                                reinterpret_cast<void*>(args[1]),
-                                reinterpret_cast<uint8_t*>(&mainVoltageOn),
-                                sizeof(float));
+                            memcpy(responsePacket + 2, &mainVoltageOn, sizeof(float));
                         }
                         break;
 
@@ -339,88 +328,107 @@ void doReceiveCommand() {
             }
             break;
 
-        case CommandType::OutputRead:
+        case PROTOCOL_OUTPUT_READ:
             {
-                responseArgsSize = 2;
+                responseSize += 1;
 
-                const uint8_t outputNumber = packetBuffer[1];
-                args[0] = outputNumber;
-                args[1] = relais->getStatus(outputNumber) ? 0x01 : 0x00;
+                const uint8_t outputNumber = requestPacket[1];
+                responsePacket[1] = outputNumber;
+                responsePacket[2] = relais->getStatus(outputNumber) ? 0x01 : 0x00;
             }
             break;
 
-        case CommandType::OutputSet:
+        case PROTOCOL_OUTPUT_SET:
             {
-                responseArgsSize = 2;
+                responseSize += 1;
 
-                const uint8_t outputNumber = packetBuffer[1];
-                const bool newStatus = packetBuffer[2] > 0;
-
-                serialDebug("Output: ");
-                serialDebug(outputNumber);
-                serialDebug(" - New value: ");
-                serialDebugln(newStatus ? "TRUE" : "FALSE");
+                const uint8_t outputNumber = requestPacket[1];
+                const bool newStatus = requestPacket[2] > 0;
 
                 relais->setStatus(outputNumber, newStatus);
 
-                args[0] = outputNumber;
-                args[1] = relais->getStatus(outputNumber) ? 0x01 : 0x00;
+                responsePacket[1] = outputNumber;
+                responsePacket[2] = relais->getStatus(outputNumber) ? 0x01 : 0x00;
             }
             break;
 
         default:
             {
-                responseType = ResponseType::Nack;
+                responsePacket[0] = PROTOCOL_NACK;
+                responsePacket[1] = requestPacket[0];
             }
     }
 
     serialDebug("Sending ");
-    serialDebug(responseTypeToString(responseType));
+    serialDebug(responsePacket[0]);
     serialDebug(" response of ");
-    serialDebug(responseArgsSize);
+    serialDebug(responseSize);
     serialDebug(" bytes to ");
     serialDebug(remoteIp);
     serialDebug(":");
     serialDebugln(remotePort);
 
-    const size_t payloadSize = responseArgsSize + 1;
+    char hexPayload[responseSize * 3];
+    payloadToHex(hexPayload, responsePacket, responseSize);
 
-    uint8_t payload[payloadSize];
-    payload[0] = responseTypeSerialize(responseType);
-    memcpy(payload + 1, args, responseArgsSize);
-
-    char hexPayload[payloadSize * 3];
-    payloadToHex(hexPayload, reinterpret_cast<const char*>(payload), payloadSize);
-
-    serialDebug("UDP Sending: ");
-    serialDebugln(hexPayload);
+    serialDebug("Sending ");
+    serialDebug(hexPayload);
+    serialDebug(" to ");
+    serialDebug(remoteIp);
+    serialDebug(":");
+    serialDebugln(remotePort);
 
     udp.beginPacket(remoteIp, remotePort);
-    udp.write(payload, payloadSize);
+    udp.write(responsePacket, responseSize);
     udp.endPacket();
 }
 
 void doReadEpeverData() {
-    epeverClient->readData();
+    const uint8_t result = node.readInputRegisters(0x3100, 6);
+    if (result != ModbusMaster::ku8MBSuccess)
+        return;
+
+    panelVoltage = node.getResponseBuffer(0x00) / 100.0f;
+    panelCurrent = node.getResponseBuffer(0x01) / 100.0f;
+    batteryVoltage = node.getResponseBuffer(0x04) / 100.0f;
+    batteryChargeCurrent = node.getResponseBuffer(0x05) / 100.0f;
 }
 
 void doReadEpeverStatus() {
-    epeverClient->readStatus();
+    const uint8_t result = node.readInputRegisters(0x3200, 3);
+    if (result != ModbusMaster::ku8MBSuccess)
+        return;
+
+    uint16_t tempBuffer = node.getResponseBuffer(0x00);
+    wrongVoltageIdentification = tempBuffer & 0x8000;
+
+    uint8_t tempData = (tempBuffer & 0x00F0) >> 4;    // D7-D4 shifted down
+    temperature = static_cast<Temperature>(tempData);
+
+    tempData = (tempBuffer & 0x000F);    // D3-D0
+    battery = static_cast<Battery>(tempData);
+
+    tempBuffer = node.getResponseBuffer(0x01);
+
+    tempData = (tempBuffer & 0x000C) >> 2;    // D3-D2 shifted down
+    charging = static_cast<Charging>(tempData);
+
+    tempData = (tempBuffer & 0xC000) >> 14;    // D15-D14 shifted down
+    arrays = static_cast<Arrays>(tempData);
+
+    tempBuffer = node.getResponseBuffer(0x02);
+    tempData = (tempBuffer & 0x3000) >> 12;    // D3-12 shifted down
+    load = static_cast<Load>(tempData);
 }
 
 void doEvaluateGlobalStatus() {
-    const EpeverData& data = epeverClient->getData();
-    if (!data.isValid())
-        return;
-
-    const float& currentVoltage = data.getBatteryVoltage();
     const float& onVoltage = config.getMainVoltageOn();
     const float& offVoltage = config.getMainVoltageOff();
 
-    globalStatus = currentVoltage >= onVoltage || (globalStatus && !(currentVoltage <= offVoltage));
+    globalStatus = batteryVoltage >= onVoltage || (globalStatus && !(batteryVoltage <= offVoltage));
 
-    serialDebug("currentVoltage: ");
-    serialDebugln(currentVoltage);
+    serialDebug("batteryVoltage: ");
+    serialDebugln(batteryVoltage);
     serialDebug("onVoltage: ");
     serialDebugln(onVoltage);
     serialDebug("offVoltage: ");
@@ -448,4 +456,14 @@ void rainbow() {
         digitalWrite(pin, HIGH);
         delayRainbow();
     }
+}
+
+void modbusPreTransmission() {
+    digitalWrite(PIN_EPEVER_RE, HIGH);
+    digitalWrite(PIN_EPEVER_DE, HIGH);
+}
+
+void modbusPostTransmission() {
+    digitalWrite(PIN_EPEVER_RE, LOW);
+    digitalWrite(PIN_EPEVER_DE, LOW);
 }

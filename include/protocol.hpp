@@ -19,17 +19,19 @@
  *
  */
 
-#ifndef STATION_MGMT__CLOCK_UTILITY__CUSTOM_DATE_TIME__H
-#define STATION_MGMT__CLOCK_UTILITY__CUSTOM_DATE_TIME__H
+#ifndef STATION_MGMT__PROTOCOL__H
+#define STATION_MGMT__PROTOCOL__H
 
-#include <DS3231.h>
+#define PROTOCOL_PING 'p'
+#define PROTOCOL_RESET 'X'
+#define PROTOCOL_TELEMETRY 't'
+#define PROTOCOL_RTC_READ 'r'
+#define PROTOCOL_RTC_SET 'R'
+#define PROTOCOL_CONFIG_READ 'c'
+#define PROTOCOL_CONFIG_SET 'C'
+#define PROTOCOL_OUTPUT_READ 'o'
+#define PROTOCOL_OUTPUT_SET 'O'
 
-class CustomDateTime final : public DateTime, public Printable {
-    public:
-
-        explicit CustomDateTime(const DateTime& dateTime);
-
-        size_t printTo(Print& p) const override;
-};
+#define PROTOCOL_NACK 'N'
 
 #endif

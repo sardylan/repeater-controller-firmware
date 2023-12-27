@@ -26,4 +26,6 @@
 
 void swapEndianness(void* var, size_t size);
 
+void payloadToHex(char* dest, const char* payload, const size_t& size);
+
 #endif

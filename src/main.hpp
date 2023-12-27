@@ -47,7 +47,7 @@
 
 #define swapEndian(x) swapEndianness(&x, sizeof(x));
 
-#define delayRainbow() delay(75)
+#define delayRainbow() delay(RAINBOW_DELAY)
 
 void (*resetFunc)() = nullptr;
 
@@ -62,5 +62,9 @@ void doEvaluateGlobalStatus();
 void doEvaluateRelais();
 
 void rainbow();
+
+void modbusPreTransmission();
+
+void modbusPostTransmission();
 
 #endif

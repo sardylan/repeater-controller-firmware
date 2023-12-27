@@ -19,32 +19,42 @@
  *
  */
 
-#ifndef STATION_MGMT__NETWORK_PROTOCOL__ENUMS__H
-#define STATION_MGMT__NETWORK_PROTOCOL__ENUMS__H
+#ifndef STATION_MGMT__ENUMS__H
+#define STATION_MGMT__ENUMS__H
 
-#include <stdint.h>
-
-enum class CommandType : uint8_t {
-    Null = '\0',
-    Ping = 'p',
-    Reset = 'X',
-    Telemetry = 't',
-    RTCRead = 'r',
-    RTCSet = 'R',
-    ConfigRead = 'c',
-    ConfigSet = 'C',
-    OutputRead = 'o',
-    OutputSet = 'O'
+enum class Temperature {
+    Normal = 0x00,
+    OverTemp = 0x01,
+    LowTemp = 0x02
 };
 
-enum class ResponseType : uint8_t {
-    Ack = 'A',
-    Nack = 'N'
+enum class Battery {
+    Normal = 0x00,
+    OverVoltage = 0x01,
+    UnderVoltage = 0x02,
+    OverDischarge = 0x03,
+    Fault = 0x04
 };
 
-enum class ConfigParam : uint8_t {
-    MainVoltageOff = 'o',
-    MainVoltageOn = 'O'
+enum class Charging {
+    NoCharging = 0x00,
+    Float = 0x01,
+    Boost = 0x02,
+    Equalization = 0x03
+};
+
+enum class Arrays {
+    Normal = 0x00,
+    NoInputPower = 0x01,
+    HigherVoltage = 0x02,
+    VoltageError = 0x03
+};
+
+enum class Load {
+    Light = 0x00,
+    Moderate = 0x01,
+    Rated = 0x02,
+    Overload = 0x03
 };
 
 #endif
