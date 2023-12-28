@@ -363,7 +363,7 @@ void doReceiveCommand() {
             }
     }
 
-    printTXDebug(requestPacket, responseSize, remoteIp, remotePort);
+    printTXDebug(responsePacket, responseSize, remoteIp, remotePort);
 
     udp.beginPacket(remoteIp, remotePort);
     udp.write(responsePacket, responseSize);
