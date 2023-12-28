@@ -22,6 +22,11 @@
 #ifndef STATION_MGMT__MAIN__H
 #define STATION_MGMT__MAIN__H
 
+#include <IPAddress.h>
+#include <stddef.h>
+
+#include "const.hpp"
+
 #define declareLastExecution(x) unsigned long lastExecution##x = 0
 
 #define getCurrentMillis() unsigned long clockNow = millis()
@@ -35,7 +40,7 @@
             ##jobName(); \
     };
 
-#ifndef DEBUG
+#ifdef DEBUG
     #define serialDebug(x) Serial.print(x)
     #define serialDebugln(x) \
         Serial.println(x); \
@@ -48,6 +53,17 @@
 #define swapEndian(x) swapEndianness(&x, sizeof(x));
 
 #define delayRainbow() delay(RAINBOW_DELAY)
+
+#define printTXDebug(payload, payloadSize, remoteIp, remotePort) \
+    printNetworkDebug(true, payload, payloadSize, remoteIp, remotePort)
+#define printRXDebug(payload, payloadSize, remoteIp, remotePort) \
+    printNetworkDebug(false, payload, payloadSize, remoteIp, remotePort)
+
+#define serialDebugHeader(x) \
+    serialDebug(RTClib::now().unixtime()); \
+    serialDebug(" ["); \
+    serialDebug(x); \
+    serialDebug("] ");
 
 void (*resetFunc)() = nullptr;
 
@@ -66,5 +82,12 @@ void rainbow();
 void modbusPreTransmission();
 
 void modbusPostTransmission();
+
+#ifdef DEBUG
+void printNetworkDebug(
+    bool isTx, const char* payload, size_t payloadSize, const IPAddress& remoteIp, uint16_t remotePort);
+#else
+#define printNetworkDebug(isTx, payload, payloadSize, remoteIp, remotePort)
+#endif
 
 #endif

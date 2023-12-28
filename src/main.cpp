@@ -161,8 +161,10 @@ void doReceiveCommand() {
 
     char requestPacket[NETWORK_BUFFER_SIZE];
     char responsePacket[NETWORK_BUFFER_SIZE];
+    char hexPayload[NETWORK_BUFFER_SIZE * 3];
     memset(requestPacket, '\0', NETWORK_BUFFER_SIZE);
     memset(responsePacket, '\0', NETWORK_BUFFER_SIZE);
+    memset(hexPayload, '\0', NETWORK_BUFFER_SIZE);
 
     const int requestSize = udp.read(requestPacket, NETWORK_BUFFER_SIZE);
     if (requestSize == 0)
@@ -170,13 +172,7 @@ void doReceiveCommand() {
 
     size_t responseSize = 1;
 
-    serialDebug(requestPacket[0]);
-    serialDebug(" command of ");
-    serialDebug(requestSize);
-    serialDebug(" bytes from ");
-    serialDebug(remoteIp);
-    serialDebug(":");
-    serialDebugln(remotePort);
+    printRXDebug(requestPacket, requestSize, remoteIp, remotePort);
 
     responsePacket[0] = requestPacket[0];
 
@@ -300,6 +296,9 @@ void doReceiveCommand() {
 
                             float value;
                             memcpy(&value, requestPacket + 2, sizeof(float));
+                            swapEndian(value);
+                            serialDebug("new Main Voltage OFF: ");
+                            serialDebugln(value);
                             config.setMainVoltageOff(value);
 
                             float mainVoltageOff = config.getMainVoltageOff();
@@ -314,6 +313,9 @@ void doReceiveCommand() {
 
                             float value;
                             memcpy(&value, requestPacket + 2, sizeof(float));
+                            swapEndian(value);
+                            serialDebug("new Main Voltage ON: ");
+                            serialDebugln(value);
                             config.setMainVoltageOn(value);
 
                             float mainVoltageOn = config.getMainVoltageOn();
@@ -330,7 +332,7 @@ void doReceiveCommand() {
 
         case PROTOCOL_OUTPUT_READ:
             {
-                responseSize += 1;
+                responseSize += 2;
 
                 const uint8_t outputNumber = requestPacket[1];
                 responsePacket[1] = outputNumber;
@@ -340,7 +342,7 @@ void doReceiveCommand() {
 
         case PROTOCOL_OUTPUT_SET:
             {
-                responseSize += 1;
+                responseSize += 2;
 
                 const uint8_t outputNumber = requestPacket[1];
                 const bool newStatus = requestPacket[2] > 0;
@@ -354,28 +356,14 @@ void doReceiveCommand() {
 
         default:
             {
+                responseSize += 1;
+
                 responsePacket[0] = PROTOCOL_NACK;
                 responsePacket[1] = requestPacket[0];
             }
     }
 
-    char hexPayload[responseSize * 3];
-    payloadToHex(hexPayload, responsePacket, responseSize);
-
-    const DateTime dateTime = RTClib::now();
-
-    serialDebug(dateTime.unixtime());
-    serialDebug(" Sending ");
-    serialDebug(responsePacket[0]);
-    serialDebug(" response of ");
-    serialDebug(responseSize);
-    serialDebug(" bytes [");
-    serialDebug(hexPayload);
-    serialDebug("] to ");
-    serialDebug(remoteIp);
-    serialDebug(":");
-    serialDebugln(remotePort);
-
+    printTXDebug(requestPacket, responseSize, remoteIp, remotePort);
 
     udp.beginPacket(remoteIp, remotePort);
     udp.write(responsePacket, responseSize);
@@ -426,18 +414,19 @@ void doEvaluateGlobalStatus() {
 
     globalStatus = batteryVoltage >= onVoltage || (globalStatus && !(batteryVoltage <= offVoltage));
 
-    serialDebug("batteryVoltage: ");
-    serialDebugln(batteryVoltage);
-    serialDebug("onVoltage: ");
-    serialDebugln(onVoltage);
-    serialDebug("offVoltage: ");
-    serialDebugln(offVoltage);
-    serialDebug("globalStatus: ");
+    serialDebugHeader("STATUS");
+    serialDebug("BV: ");
+    serialDebug(batteryVoltage);
+    serialDebug(" - on: ");
+    serialDebug(onVoltage);
+    serialDebug(" - off: ");
+    serialDebug(offVoltage);
+    serialDebug(" - GS: ");
     serialDebugln(globalStatus);
 }
 
 void doEvaluateRelais() {
-    serialDebug("Relais: ");
+    serialDebugHeader("RELAIS");
     for (int i = 0; i < RELAIS_NUMBER; i++) {
         serialDebug(relais->getStatus(i) ? "1" : "0");
         digitalWrite(relaisPins[i], globalStatus && relais->getStatus(i) ? LOW : HIGH);
@@ -466,3 +455,43 @@ void modbusPostTransmission() {
     digitalWrite(PIN_EPEVER_RE, LOW);
     digitalWrite(PIN_EPEVER_DE, LOW);
 }
+
+#ifdef DEBUG
+void printNetworkDebug(
+    const bool isTx,
+    const char* payload,
+    const size_t payloadSize,
+    const IPAddress& remoteIp,
+    const uint16_t remotePort) {
+    char hexPayload[NETWORK_BUFFER_SIZE * 3];
+    memset(hexPayload, '\0', NETWORK_BUFFER_SIZE);
+    payloadToHex(hexPayload, payload, payloadSize);
+
+    serialDebugHeader("NET");
+
+    if (isTx)
+        serialDebug(" TX \"");
+    else
+        serialDebug(" RX \"");
+
+    serialDebug(payload[0]);
+
+    if (isTx)
+        serialDebug("\" response of ");
+    else
+        serialDebug("\" request of ");
+
+    serialDebug(payloadSize);
+    serialDebug(" bytes [");
+    serialDebug(hexPayload);
+
+    if (isTx)
+        serialDebug("] to ");
+    else
+        serialDebug("] from ");
+
+    serialDebug(remoteIp);
+    serialDebug(":");
+    serialDebugln(remotePort);
+}
+#endif

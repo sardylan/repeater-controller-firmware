@@ -48,4 +48,6 @@
 
 #define RAINBOW_DELAY 75
 
+#define DEBUG
+
 #endif
