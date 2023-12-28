@@ -40,7 +40,7 @@ void payloadToHex(char* dest, const char* payload, const size_t& size) {
             *output = ' ';
             output += 1;
         }
-        sprintf(output, "%02x", payload[i]);
+        sprintf(output, "%02x", static_cast<unsigned char>(payload[i]));
         output += 2;
     }
     *output = '\0';

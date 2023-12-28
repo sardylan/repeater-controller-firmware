@@ -359,24 +359,23 @@ void doReceiveCommand() {
             }
     }
 
-    serialDebug("Sending ");
-    serialDebug(responsePacket[0]);
-    serialDebug(" response of ");
-    serialDebug(responseSize);
-    serialDebug(" bytes to ");
-    serialDebug(remoteIp);
-    serialDebug(":");
-    serialDebugln(remotePort);
-
     char hexPayload[responseSize * 3];
     payloadToHex(hexPayload, responsePacket, responseSize);
 
-    serialDebug("Sending ");
+    const DateTime dateTime = RTClib::now();
+
+    serialDebug(dateTime.unixtime());
+    serialDebug(" Sending ");
+    serialDebug(responsePacket[0]);
+    serialDebug(" response of ");
+    serialDebug(responseSize);
+    serialDebug(" bytes [");
     serialDebug(hexPayload);
-    serialDebug(" to ");
+    serialDebug("] to ");
     serialDebug(remoteIp);
     serialDebug(":");
     serialDebugln(remotePort);
+
 
     udp.beginPacket(remoteIp, remotePort);
     udp.write(responsePacket, responseSize);
