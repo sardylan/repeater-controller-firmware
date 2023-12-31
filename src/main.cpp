@@ -22,7 +22,7 @@
 #include "main.hpp"
 
 #include <Arduino.h>
-#include <DS3231.h>
+// #include <DS3231.h>
 #include <Ethernet.h>
 #include <ModbusMaster.h>
 #include <Wire.h>
@@ -35,7 +35,7 @@
 #include "utils.hpp"
 #include "version.hpp"
 
-DS3231 rtc;
+// DS3231 rtc;
 
 Config config;
 
@@ -125,9 +125,9 @@ void setup() {
     udp.begin(NETWORK_UDP_PORT);
     serialDebugln("done");
 
-    serialDebug("Configuring Clock... ");
-    rtc.setClockMode(false);
-    serialDebugln("done");
+    // serialDebug("Configuring Clock... ");
+    // rtc.setClockMode(false);
+    // serialDebugln("done");
 
     serialDebug("Configuring Relais... ");
     relais = Relais::getInstance();
@@ -179,13 +179,13 @@ void doReceiveCommand() {
     switch (requestPacket[0]) {
         case PROTOCOL_PING:
             {
-                responseSize += 4;
+                // responseSize += 4;
 
-                const DateTime dateTime = RTClib::now();
-                uint32_t unixtime = dateTime.unixtime();
+                // const DateTime dateTime = RTClib::now();
+                // uint32_t unixtime = dateTime.unixtime();
 
-                swapEndian(unixtime);
-                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
+                // swapEndian(unixtime);
+                // memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
             }
             break;
 
@@ -198,11 +198,11 @@ void doReceiveCommand() {
 
         case PROTOCOL_TELEMETRY:
             {
-                responseSize += 21;
+                responseSize += 17;
 
-                const DateTime dateTime = RTClib::now();
-                uint32_t unixtime = dateTime.unixtime();
-                swapEndian(unixtime);
+                // const DateTime dateTime = RTClib::now();
+                // uint32_t unixtime = dateTime.unixtime();
+                // swapEndian(unixtime);
 
                 float tempPanelVoltage = panelVoltage;
                 swapEndian(tempPanelVoltage);
@@ -216,41 +216,41 @@ void doReceiveCommand() {
                 float tempBatteryChargeCurrent = batteryChargeCurrent;
                 swapEndian(tempBatteryChargeCurrent);
 
-                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
-                memcpy(responsePacket + 5, &tempPanelVoltage, sizeof(float));
-                memcpy(responsePacket + 9, &tempPanelCurrent, sizeof(float));
-                memcpy(responsePacket + 13, &tempBatteryVoltage, sizeof(float));
-                memcpy(responsePacket + 17, &tempBatteryChargeCurrent, sizeof(float));
-                responsePacket[21] = globalStatus ? 0x01 : 0x00;
+                // memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
+                memcpy(responsePacket + 0, &tempPanelVoltage, sizeof(float));
+                memcpy(responsePacket + 4, &tempPanelCurrent, sizeof(float));
+                memcpy(responsePacket + 8, &tempBatteryVoltage, sizeof(float));
+                memcpy(responsePacket + 12, &tempBatteryChargeCurrent, sizeof(float));
+                responsePacket[16] = globalStatus ? 0x01 : 0x00;
             }
             break;
 
-        case PROTOCOL_RTC_READ:
-            {
-                responseSize += 4;
+            // case PROTOCOL_RTC_READ:
+            //     {
+            //         responseSize += 4;
+            //
+            //         const DateTime dateTime = RTClib::now();
+            //         uint32_t unixtime = dateTime.unixtime();
+            //         swapEndian(unixtime);
+            //         memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
+            //     }
+            //     break;
 
-                const DateTime dateTime = RTClib::now();
-                uint32_t unixtime = dateTime.unixtime();
-                swapEndian(unixtime);
-                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
-            }
-            break;
-
-        case PROTOCOL_RTC_SET:
-            {
-                responseSize += 4;
-
-                time_t newUnixtime;
-                memcpy(&newUnixtime, requestPacket + 1, sizeof(time_t));
-                swapEndian(newUnixtime);
-                rtc.setEpoch(newUnixtime);
-
-                const DateTime dateTime = RTClib::now();
-                uint32_t unixtime = dateTime.unixtime();
-                swapEndian(unixtime);
-                memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
-            }
-            break;
+            // case PROTOCOL_RTC_SET:
+            //     {
+            //         responseSize += 4;
+            //
+            //         time_t newUnixtime;
+            //         memcpy(&newUnixtime, requestPacket + 1, sizeof(time_t));
+            //         swapEndian(newUnixtime);
+            //         rtc.setEpoch(newUnixtime);
+            //
+            //         const DateTime dateTime = RTClib::now();
+            //         uint32_t unixtime = dateTime.unixtime();
+            //         swapEndian(unixtime);
+            //         memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
+            //     }
+            //     break;
 
         case PROTOCOL_CONFIG_READ:
             {
@@ -372,8 +372,13 @@ void doReceiveCommand() {
 
 void doReadEpeverData() {
     const uint8_t result = node.readInputRegisters(0x3100, 6);
-    if (result != ModbusMaster::ku8MBSuccess)
+    if (result != ModbusMaster::ku8MBSuccess) {
+        panelVoltage = 0;
+        panelCurrent = 0;
+        batteryVoltage = 0;
+        batteryChargeCurrent = 0;
         return;
+    }
 
     panelVoltage = node.getResponseBuffer(0x00) / 100.0f;
     panelCurrent = node.getResponseBuffer(0x01) / 100.0f;
@@ -383,8 +388,9 @@ void doReadEpeverData() {
 
 void doReadEpeverStatus() {
     const uint8_t result = node.readInputRegisters(0x3200, 3);
-    if (result != ModbusMaster::ku8MBSuccess)
+    if (result != ModbusMaster::ku8MBSuccess) {
         return;
+    }
 
     uint16_t tempBuffer = node.getResponseBuffer(0x00);
     wrongVoltageIdentification = tempBuffer & 0x8000;

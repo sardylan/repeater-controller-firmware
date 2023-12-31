@@ -59,9 +59,16 @@
 #define printRXDebug(payload, payloadSize, remoteIp, remotePort) \
     printNetworkDebug(false, payload, payloadSize, remoteIp, remotePort)
 
+/*
 #define serialDebugHeader(x) \
     serialDebug(RTClib::now().unixtime()); \
     serialDebug(" ["); \
+    serialDebug(x); \
+    serialDebug("] ");
+*/
+
+#define serialDebugHeader(x) \
+    serialDebug("["); \
     serialDebug(x); \
     serialDebug("] ");
 
@@ -87,7 +94,7 @@ void modbusPostTransmission();
 void printNetworkDebug(
     bool isTx, const char* payload, size_t payloadSize, const IPAddress& remoteIp, uint16_t remotePort);
 #else
-#define printNetworkDebug(isTx, payload, payloadSize, remoteIp, remotePort)
+    #define printNetworkDebug(isTx, payload, payloadSize, remoteIp, remotePort)
 #endif
 
 #endif
