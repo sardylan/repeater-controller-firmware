@@ -25,6 +25,8 @@
 #define PROTOCOL_PING 'p'
 #define PROTOCOL_RESET 'X'
 #define PROTOCOL_TELEMETRY 't'
+#define PROTOCOL_METEO 'm'
+#define PROTOCOL_STATUS 's'
 #define PROTOCOL_RTC_READ 'r'
 #define PROTOCOL_RTC_SET 'R'
 #define PROTOCOL_CONFIG_READ 'c'

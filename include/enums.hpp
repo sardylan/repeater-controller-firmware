@@ -22,13 +22,13 @@
 #ifndef STATION_MGMT__ENUMS__H
 #define STATION_MGMT__ENUMS__H
 
-enum class Temperature {
+enum class Temperature : uint8_t {
     Normal = 0x00,
     OverTemp = 0x01,
     LowTemp = 0x02
 };
 
-enum class Battery {
+enum class Battery : uint8_t {
     Normal = 0x00,
     OverVoltage = 0x01,
     UnderVoltage = 0x02,
@@ -36,21 +36,21 @@ enum class Battery {
     Fault = 0x04
 };
 
-enum class Charging {
+enum class Charging : uint8_t {
     NoCharging = 0x00,
     Float = 0x01,
     Boost = 0x02,
     Equalization = 0x03
 };
 
-enum class Arrays {
+enum class Arrays : uint8_t {
     Normal = 0x00,
     NoInputPower = 0x01,
     HigherVoltage = 0x02,
     VoltageError = 0x03
 };
 
-enum class Load {
+enum class Load : uint8_t {
     Light = 0x00,
     Moderate = 0x01,
     Rated = 0x02,

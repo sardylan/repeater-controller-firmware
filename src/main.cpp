@@ -22,7 +22,6 @@
 #include "main.hpp"
 
 #include <Arduino.h>
-// #include <DS3231.h>
 #include <Ethernet.h>
 #include <ModbusMaster.h>
 #include <Wire.h>
@@ -35,28 +34,45 @@
 #include "utils.hpp"
 #include "version.hpp"
 
-// DS3231 rtc;
+#ifdef RTC_DS3231_ENABLED
+    #include <DS3231.h>
+DS3231 rtc;
+#endif
+
+#ifdef SENSOR_BMP280_ENABLED
+    #include <Adafruit_BMP280.h>
+Adafruit_BMP280 bmp;
+#endif
 
 Config config;
 
 ModbusMaster node;
+
 float panelVoltage;
 float panelCurrent;
 float batteryVoltage;
 float batteryChargeCurrent;
 
-bool wrongVoltageIdentification;
-Temperature temperature;
-Battery battery;
-Charging charging;
-Arrays arrays;
-Load load;
+float bmpTemp;
+float bmpPressure;
+
+bool statusWrongVoltageIdentification;
+Temperature statusTemperature;
+Battery statusBattery;
+Charging statusCharging;
+Arrays statusArrays;
+Load statusLoad;
 
 EthernetUDP udp;
 
 Relais* relais;
 
 declareLastExecution(ReceiveCommand);
+
+#ifdef SENSOR_BMP280_ENABLED
+declareLastExecution(ReadBMP);
+#endif
+
 declareLastExecution(ReadEpeverData);
 declareLastExecution(ReadEpeverStatus);
 declareLastExecution(EvaluateGlobalStatus);
@@ -77,14 +93,6 @@ void setup() {
     Serial.println(FIRMWARE_VERSION);
     Serial.println();
     Serial.flush();
-
-    serialDebug("Configuring Relais pins... ");
-    for (const int pin : relaisPins) {
-        pinMode(pin, OUTPUT);
-        digitalWrite(pin, HIGH);
-    }
-    rainbow();
-    serialDebugln("done");
 
     serialDebug("Configuring Ethernet shield pins... ");
     pinMode(PIN_ETHERNET_SD_ENABLE, OUTPUT);
@@ -125,13 +133,39 @@ void setup() {
     udp.begin(NETWORK_UDP_PORT);
     serialDebugln("done");
 
-    // serialDebug("Configuring Clock... ");
-    // rtc.setClockMode(false);
-    // serialDebugln("done");
+#ifdef RTC_DS3231_ENABLED
+    serialDebug("Configuring Clock... ");
+    rtc.setClockMode(false);
+    serialDebugln("done");
+#endif
+
+#ifdef SENSOR_BMP280_ENABLED
+    serialDebug("Configuring BMP280... ");
+    bmp.begin(SENSOR_BMP280_ADDRESS);
+
+    serialDebug("Sensor ID: ");
+    serialDebug(bmp.sensorID());
+
+    bmp.setSampling(
+        Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+        Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+        Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+        Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+        Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+    serialDebugln(" | done");
+#endif
 
     serialDebug("Configuring Relais... ");
     relais = Relais::getInstance();
     globalStatus = false;
+    serialDebugln("done");
+
+    serialDebug("Configuring Relais pins... ");
+    for (const int pin : relaisPins) {
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, HIGH);
+    }
+    rainbow();
     serialDebugln("done");
 
     executeReset = false;
@@ -141,8 +175,13 @@ void loop() {
     getCurrentMillis();
 
     executeEvery(ReceiveCommand, 250);
+
+#ifdef SENSOR_BMP280_ENABLED
+    executeEvery(ReadBMP, 1000);
+#endif
+
     executeEvery(ReadEpeverData, 1000);
-    executeEvery(ReadEpeverStatus, 1000);
+    executeEvery(ReadEpeverStatus, 5000);
     executeEvery(EvaluateGlobalStatus, 1000);
     executeEvery(EvaluateRelais, 1000);
 
@@ -170,15 +209,16 @@ void doReceiveCommand() {
     if (requestSize == 0)
         return;
 
-    size_t responseSize = 1;
-
     printRXDebug(requestPacket, requestSize, remoteIp, remotePort);
 
+    size_t responseSize = 1;
     responsePacket[0] = requestPacket[0];
 
     switch (requestPacket[0]) {
         case PROTOCOL_PING:
             {
+                serialDebugln("Command PING");
+
                 // responseSize += 4;
 
                 // const DateTime dateTime = RTClib::now();
@@ -191,89 +231,135 @@ void doReceiveCommand() {
 
         case PROTOCOL_RESET:
             {
-                serialDebugln("Preparing for executing reset");
+                serialDebugln("Command RESET");
                 executeReset = true;
             }
             break;
 
         case PROTOCOL_TELEMETRY:
             {
-                responseSize += 17;
+                serialDebugln("Command TELEMETRY");
 
                 // const DateTime dateTime = RTClib::now();
                 // uint32_t unixtime = dateTime.unixtime();
                 // swapEndian(unixtime);
+                // memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
 
                 float tempPanelVoltage = panelVoltage;
                 swapEndian(tempPanelVoltage);
+                memcpy(responsePacket + responseSize, &tempPanelVoltage, sizeof(float));
+                responseSize += 4;
 
                 float tempPanelCurrent = panelCurrent;
                 swapEndian(tempPanelCurrent);
+                memcpy(responsePacket + responseSize, &tempPanelCurrent, sizeof(float));
+                responseSize += 4;
 
                 float tempBatteryVoltage = batteryVoltage;
                 swapEndian(tempBatteryVoltage);
+                memcpy(responsePacket + responseSize, &tempBatteryVoltage, sizeof(float));
+                responseSize += 4;
 
                 float tempBatteryChargeCurrent = batteryChargeCurrent;
                 swapEndian(tempBatteryChargeCurrent);
+                memcpy(responsePacket + responseSize, &tempBatteryChargeCurrent, sizeof(float));
+                responseSize += 4;
 
-                // memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
-                memcpy(responsePacket + 0, &tempPanelVoltage, sizeof(float));
-                memcpy(responsePacket + 4, &tempPanelCurrent, sizeof(float));
-                memcpy(responsePacket + 8, &tempBatteryVoltage, sizeof(float));
-                memcpy(responsePacket + 12, &tempBatteryChargeCurrent, sizeof(float));
-                responsePacket[16] = globalStatus ? 0x01 : 0x00;
+                responsePacket[responseSize] = globalStatus ? 0x01 : 0x00;
+                responseSize += 1;
             }
             break;
 
-            // case PROTOCOL_RTC_READ:
-            //     {
-            //         responseSize += 4;
-            //
-            //         const DateTime dateTime = RTClib::now();
-            //         uint32_t unixtime = dateTime.unixtime();
-            //         swapEndian(unixtime);
-            //         memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
-            //     }
-            //     break;
+        case PROTOCOL_STATUS:
+            {
+                serialDebugln("Command STATUS");
 
-            // case PROTOCOL_RTC_SET:
-            //     {
-            //         responseSize += 4;
-            //
-            //         time_t newUnixtime;
-            //         memcpy(&newUnixtime, requestPacket + 1, sizeof(time_t));
-            //         swapEndian(newUnixtime);
-            //         rtc.setEpoch(newUnixtime);
-            //
-            //         const DateTime dateTime = RTClib::now();
-            //         uint32_t unixtime = dateTime.unixtime();
-            //         swapEndian(unixtime);
-            //         memcpy(responsePacket + 1, &unixtime, sizeof(uint32_t));
-            //     }
-            //     break;
+                *(responsePacket + responseSize) = statusWrongVoltageIdentification ? 0x01 : 0x00;
+                responseSize += 1;
+
+                *(responsePacket + responseSize) = static_cast<char>(statusTemperature);
+                responseSize += 1;
+
+                *(responsePacket + responseSize) = static_cast<char>(statusBattery);
+                responseSize += 1;
+
+                *(responsePacket + responseSize) = static_cast<char>(statusCharging);
+                responseSize += 1;
+
+                *(responsePacket + responseSize) = static_cast<char>(statusArrays);
+                responseSize += 1;
+
+                *(responsePacket + responseSize) = static_cast<char>(statusLoad);
+                responseSize += 1;
+            }
+            break;
+
+        case PROTOCOL_METEO:
+            {
+                serialDebugln("Command METEO");
+
+                float tempBmpPressure = bmpPressure;
+                swapEndian(tempBmpPressure);
+                memcpy(responsePacket + responseSize, &tempBmpPressure, sizeof(float));
+                responseSize += 4;
+
+                float tempBmpTemp = bmpTemp;
+                swapEndian(tempBmpTemp);
+                memcpy(responsePacket + responseSize, &tempBmpTemp, sizeof(float));
+                responseSize += 4;
+            }
+            break;
+
+#ifdef RTC_DS3231_ENABLED
+        case PROTOCOL_RTC_READ:
+            {
+                const DateTime dateTime = RTClib::now();
+                uint32_t unixtime = dateTime.unixtime();
+                swapEndian(unixtime);
+                memcpy(responsePacket + responseSize, &unixtime, sizeof(uint32_t));
+                responseSize += sizeof(uint32_t);
+            }
+            break;
+
+        case PROTOCOL_RTC_SET:
+            {
+                time_t newUnixtime;
+                memcpy(&newUnixtime, requestPacket + 1, sizeof(time_t));
+                swapEndian(newUnixtime);
+                rtc.setEpoch(newUnixtime);
+
+                const DateTime dateTime = RTClib::now();
+                uint32_t unixtime = dateTime.unixtime();
+                swapEndian(unixtime);
+                memcpy(responsePacket + responseSize, &unixtime, sizeof(uint32_t));
+                responseSize += sizeof(uint32_t);
+            }
+            break;
+#endif
 
         case PROTOCOL_CONFIG_READ:
             {
-                responseSize += 1;
+                serialDebugln("Command CONFIG_READ");
 
                 responsePacket[1] = requestPacket[1];
+                responseSize += 1;
 
                 switch (requestPacket[1]) {
                     case CONFIG_MAIN_VOLTAGE_OFF_PARAM:
                         {
-                            responseSize += sizeof(float);
                             float mainVoltageOff = config.getMainVoltageOff();
                             swapEndian(mainVoltageOff);
-                            memcpy(responsePacket + 2, &mainVoltageOff, sizeof(float));
+                            memcpy(responsePacket + responseSize, &mainVoltageOff, sizeof(float));
+                            responseSize += sizeof(float);
                         }
                         break;
 
                     case CONFIG_MAIN_VOLTAGE_ON_PARAM:
                         {
-                            responseSize += sizeof(float);
                             float mainVoltageOn = config.getMainVoltageOn();
                             swapEndian(mainVoltageOn);
-                            memcpy(responsePacket + 2, &mainVoltageOn, sizeof(float));
+                            memcpy(responsePacket + responseSize, &mainVoltageOn, sizeof(float));
+                            responseSize += sizeof(float);
                         }
                         break;
 
@@ -285,42 +371,41 @@ void doReceiveCommand() {
 
         case PROTOCOL_CONFIG_SET:
             {
-                responseSize += 1;
+                serialDebugln("Command CONFIG_SET");
 
                 responsePacket[1] = requestPacket[1];
+                responseSize += 1;
 
                 switch (requestPacket[1]) {
                     case CONFIG_MAIN_VOLTAGE_OFF_PARAM:
                         {
-                            responseSize += sizeof(float);
-
                             float value;
                             memcpy(&value, requestPacket + 2, sizeof(float));
                             swapEndian(value);
-                            serialDebug("new Main Voltage OFF: ");
+                            serialDebug("New Main Voltage OFF: ");
                             serialDebugln(value);
                             config.setMainVoltageOff(value);
 
                             float mainVoltageOff = config.getMainVoltageOff();
                             swapEndian(mainVoltageOff);
-                            memcpy(responsePacket + 2, &mainVoltageOff, sizeof(float));
+                            memcpy(responsePacket + responseSize, &mainVoltageOff, sizeof(float));
+                            responseSize += sizeof(float);
                         }
                         break;
 
                     case CONFIG_MAIN_VOLTAGE_ON_PARAM:
                         {
-                            responseSize += sizeof(float);
-
                             float value;
                             memcpy(&value, requestPacket + 2, sizeof(float));
                             swapEndian(value);
-                            serialDebug("new Main Voltage ON: ");
+                            serialDebug("New Main Voltage ON: ");
                             serialDebugln(value);
                             config.setMainVoltageOn(value);
 
                             float mainVoltageOn = config.getMainVoltageOn();
                             swapEndian(mainVoltageOn);
-                            memcpy(responsePacket + 2, &mainVoltageOn, sizeof(float));
+                            memcpy(responsePacket + responseSize, &mainVoltageOn, sizeof(float));
+                            responseSize += sizeof(float);
                         }
                         break;
 
@@ -332,17 +417,18 @@ void doReceiveCommand() {
 
         case PROTOCOL_OUTPUT_READ:
             {
-                responseSize += 2;
+                serialDebugln("Command OUTPUT_READ");
 
                 const uint8_t outputNumber = requestPacket[1];
                 responsePacket[1] = outputNumber;
                 responsePacket[2] = relais->getStatus(outputNumber) ? 0x01 : 0x00;
+                responseSize += 2;
             }
             break;
 
         case PROTOCOL_OUTPUT_SET:
             {
-                responseSize += 2;
+                serialDebugln("Command OUTPUT_SET");
 
                 const uint8_t outputNumber = requestPacket[1];
                 const bool newStatus = requestPacket[2] > 0;
@@ -351,15 +437,17 @@ void doReceiveCommand() {
 
                 responsePacket[1] = outputNumber;
                 responsePacket[2] = relais->getStatus(outputNumber) ? 0x01 : 0x00;
+                responseSize += 2;
             }
             break;
 
         default:
             {
-                responseSize += 1;
+                serialDebugln("Command not recognized!!! Sending NACK!!!");
 
                 responsePacket[0] = PROTOCOL_NACK;
                 responsePacket[1] = requestPacket[0];
+                responseSize += 2;
             }
     }
 
@@ -369,6 +457,19 @@ void doReceiveCommand() {
     udp.write(responsePacket, responseSize);
     udp.endPacket();
 }
+
+#ifdef SENSOR_BMP280_ENABLED
+void doReadBMP() {
+    bmpTemp = bmp.readTemperature();
+    bmpPressure = bmp.readPressure() / 100.0f;
+
+    serialDebugHeader("BMP280");
+    serialDebug("Temp: ");
+    serialDebug(bmpTemp);
+    serialDebug(" - Pressure: ");
+    serialDebugln(bmpPressure);
+}
+#endif
 
 void doReadEpeverData() {
     const uint8_t result = node.readInputRegisters(0x3100, 6);
@@ -393,25 +494,25 @@ void doReadEpeverStatus() {
     }
 
     uint16_t tempBuffer = node.getResponseBuffer(0x00);
-    wrongVoltageIdentification = tempBuffer & 0x8000;
+    statusWrongVoltageIdentification = tempBuffer & 0x8000;
 
     uint8_t tempData = (tempBuffer & 0x00F0) >> 4;    // D7-D4 shifted down
-    temperature = static_cast<Temperature>(tempData);
+    statusTemperature = static_cast<Temperature>(tempData);
 
     tempData = (tempBuffer & 0x000F);    // D3-D0
-    battery = static_cast<Battery>(tempData);
+    statusBattery = static_cast<Battery>(tempData);
 
     tempBuffer = node.getResponseBuffer(0x01);
 
     tempData = (tempBuffer & 0x000C) >> 2;    // D3-D2 shifted down
-    charging = static_cast<Charging>(tempData);
+    statusCharging = static_cast<Charging>(tempData);
 
     tempData = (tempBuffer & 0xC000) >> 14;    // D15-D14 shifted down
-    arrays = static_cast<Arrays>(tempData);
+    statusArrays = static_cast<Arrays>(tempData);
 
     tempBuffer = node.getResponseBuffer(0x02);
     tempData = (tempBuffer & 0x3000) >> 12;    // D3-12 shifted down
-    load = static_cast<Load>(tempData);
+    statusLoad = static_cast<Load>(tempData);
 }
 
 void doEvaluateGlobalStatus() {

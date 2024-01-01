@@ -22,6 +22,8 @@
 #ifndef STATION_MGMT__CONST__H
 #define STATION_MGMT__CONST__H
 
+#include <Adafruit_BMP280.h>
+
 #define PIN_EPEVER_RO 0    // RX
 #define PIN_EPEVER_RE 3
 #define PIN_EPEVER_DE 2
@@ -42,6 +44,11 @@
 #define NETWORK_SUBNET "172.29.10.0"
 #define NETWORK_UDP_PORT 8888
 #define NETWORK_BUFFER_SIZE 64
+
+// #define RTC_DS3231_ENABLED
+
+#define SENSOR_BMP280_ENABLED
+#define SENSOR_BMP280_ADDRESS BMP280_ADDRESS_ALT
 
 #define RELAIS_CHANNEL_PINS \
     { 23, 25, 27, 29, 31, 33, 35, 37 }

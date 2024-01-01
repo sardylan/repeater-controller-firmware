@@ -76,6 +76,10 @@ void (*resetFunc)() = nullptr;
 
 void doReceiveCommand();
 
+#ifdef SENSOR_BMP280_ENABLED
+void doReadBMP();
+#endif
+
 void doReadEpeverData();
 
 void doReadEpeverStatus();
